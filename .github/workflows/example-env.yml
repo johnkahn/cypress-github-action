@@ -8,6 +8,7 @@ env:
   CYPRESS_environmentName: staging
 jobs:
   e2e:
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,6 +27,7 @@ jobs:
     # we are passing additional environment variables
     # using "--env" command line option
     # see https://on.cypress.io/configuration
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,6 +45,7 @@ jobs:
           spec: cypress/integration/spec.js
 
   with-action-env:
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -65,6 +68,7 @@ jobs:
     # 'environmentName' value comes from the workflow's environment
     # 'apiPort' comes from the step's "env" block
     # 'host' is defined in the action's "with: env:" parameter
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

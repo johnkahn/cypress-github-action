@@ -35,7 +35,7 @@ jobs:
     name: release
     needs: [build-and-test-node10, build-and-test-node12]
     # only release from the master branch
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && github.event.repository.fork == false
     steps:
       - name: Checkout
         uses: actions/checkout@v1

@@ -1,7 +1,9 @@
 name: example-basic
 on: [push]
+
 jobs:
   basic:
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -21,6 +23,7 @@ jobs:
           build: npx cypress info
 
   basic-on-windows:
+    if: github.event.repository.fork == false
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -33,6 +36,7 @@ jobs:
           build: npx cypress info
 
   basic-on-mac:
+    if: github.event.repository.fork == false
     runs-on: macos-latest
     steps:
       - name: Checkout
