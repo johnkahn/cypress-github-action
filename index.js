@@ -633,12 +633,6 @@ const runTests = async () => {
     // we still set the output explicitly
     core.setOutput('dashboardUrl', dashboardUrl)
 
-    if (testResults.totalFailed) {
-      return Promise.reject(
-        new Error(`Cypress tests: ${testResults.totalFailed} failed`)
-      )
-    }
-
     return Promise.resolve(testResults)
   }
 
@@ -938,6 +932,8 @@ const commentOnPullRequestMaybe = async results => {
       body
     })
   }
+
+  return results
 }
 
 installMaybe()
@@ -946,6 +942,13 @@ installMaybe()
   .then(waitOnMaybe)
   .then(runTests)
   .then(commentOnPullRequestMaybe)
+  .then(testResults => {
+    if (testResults.totalFailed) {
+      return Promise.reject(
+        new Error(`Cypress tests: ${testResults.totalFailed} failed`)
+      )
+    }
+  })
   .then(() => {
     core.debug('all done, exiting')
     // force exit to avoid waiting for child processes,
