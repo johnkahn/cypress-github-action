@@ -752,16 +752,17 @@ const formatResults = results => {
     rows.push(newRow)
   }
 
+  const totalSpecs = runs.length
   const totalSpecsFailed = runs.filter(run => run.stats.failures > 0)
     .length
   const footer = [totalSpecsFailed > 0 ? '✘' : '✔']
   if (totalSpecsFailed > 0) {
     const percentFailed = Math.round(
-      (totalSpecsFailed / totalTests) * 100
+      (totalSpecsFailed / totalSpecs) * 100
     )
 
     footer.push(
-      `${totalSpecsFailed} of ${runs.length} failed (${percentFailed}%)`
+      `${totalSpecsFailed} of ${totalSpecs} failed (${percentFailed}%)`
     )
   } else {
     footer.push('All specs passed!')
