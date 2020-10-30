@@ -742,6 +742,7 @@ const formatResults = results => {
   const rows = []
 
   for (const run of runs) {
+    console.log(`FORMATTING DURATION:`, run.stats.duration)
     const newRow = [
       run.stats.failures > 0 ? '✘' : '✔',
       run.spec.name,
@@ -780,8 +781,9 @@ const formatResults = results => {
     footer.push(totalSkipped + '')
   }
 
+  const allData = [header, ...rows, footer]
   const colWidths = header.map((_, colIndex) =>
-    rows.reduce(
+    allData.reduce(
       (acc, row) => Math.max(acc, row[colIndex].length + 2),
       0
     )
@@ -822,19 +824,19 @@ const formatResults = results => {
     ...tableOptions,
     chars: {
       top: '─',
-      'top-mid': '',
+      'top-mid': '─',
       'top-right': '┐',
       right: '|',
       'right-mid': '┤',
       'bottom-right': '┘',
       bottom: '─',
-      'bottom-mid': '',
+      'bottom-mid': '─',
       'bottom-left': '└',
       left: '│',
       'left-mid': '├',
       'top-left': '┌',
       mid: '-',
-      'mid-mid': ''
+      'mid-mid': '─'
     }
   })
   dataTable.push(...rows)
@@ -896,7 +898,8 @@ const commentOnPullRequestMaybe = async results => {
   const currentComment = comments.find(
     comment =>
       comment.user.login === githubUserLogin &&
-      comment.body.indexOf('## Cypress Request') === 0
+      (comment.body.indexOf('## Cypress') > 0 ||
+        comment.body.indexOf('## [Cypress]') > 0)
   )
 
   const shortSha = github.context.sha.substr(0, 7)
@@ -915,7 +918,8 @@ const commentOnPullRequestMaybe = async results => {
     results.runUrl
       ? `[View runs on the Dashboard](${results.runUrl})`
       : `[Test and debug faster with the Cypress Dashboard](https://www.cypress.io/dashboard)`,
-    `> Powered by [Cypress.io](https://www.cypress.io/). Last update **${shortSha}**.`
+    `> Last update **${shortSha}**`,
+    `> Powered by [Cypress.io](https://www.cypress.io/)`
   ].join('\n')
 
   if (currentComment) {
