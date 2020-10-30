@@ -1,0 +1,22 @@
+name: example-pr-comment
+on: [push, pull_request]
+
+jobs:
+  pr-comment:
+    # if: github.event.repository.fork == false # TODO: REMOVE BEFORE PULL REQUEST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Cypress tests
+        # normally you would write
+        # uses: cypress-io/github-action@v2
+        uses: ./
+        # the parameters below are only necessary
+        # because we are running these examples in a monorepo
+        with:
+          working-directory: examples/basic
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-user-login: 'github-actions[bot]'
+          comment-on-pull-request: true

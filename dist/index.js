@@ -423,7 +423,7 @@ exports.defaultGetter = defaultGetter;
 /* 3 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-var once = __webpack_require__(969);
+var once = __webpack_require__(49);
 
 var noop = function() {};
 
@@ -2528,12 +2528,60 @@ function coerce(val) {
 
 
 /***/ }),
-/* 26 */,
+/* 26 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function getUserAgent() {
+  if (typeof navigator === "object" && "userAgent" in navigator) {
+    return navigator.userAgent;
+  }
+
+  if (typeof process === "object" && "version" in process) {
+    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
+  }
+
+  return "<environment undetectable>";
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 27 */,
 /* 28 */,
 /* 29 */,
 /* 30 */,
-/* 31 */,
+/* 31 */
+/***/ (function(module) {
+
+"use strict";
+/*!
+ * repeat-element <https://github.com/jonschlinkert/repeat-element>
+ *
+ * Copyright (c) 2015-present, Jon Schlinkert.
+ * Licensed under the MIT license.
+ */
+
+
+
+module.exports = function repeat(ele, num) {
+  var arr = new Array(num);
+
+  for (var i = 0; i < num; i++) {
+    arr[i] = ele;
+  }
+
+  return arr;
+};
+
+
+/***/ }),
 /* 32 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -2789,59 +2837,48 @@ module.exports = extend;
 /* 49 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
+var wrappy = __webpack_require__(11)
+module.exports = wrappy(once)
+module.exports.strict = wrappy(onceStrict)
 
-const os = __webpack_require__(87);
-const execa = __webpack_require__(675);
+once.proto = once(function () {
+  Object.defineProperty(Function.prototype, 'once', {
+    value: function () {
+      return once(this)
+    },
+    configurable: true
+  })
 
-// Reference: https://www.gaijin.at/en/lstwinver.php
-const names = new Map([
-	['10.0', '10'],
-	['6.3', '8.1'],
-	['6.2', '8'],
-	['6.1', '7'],
-	['6.0', 'Vista'],
-	['5.2', 'Server 2003'],
-	['5.1', 'XP'],
-	['5.0', '2000'],
-	['4.9', 'ME'],
-	['4.1', '98'],
-	['4.0', '95']
-]);
+  Object.defineProperty(Function.prototype, 'onceStrict', {
+    value: function () {
+      return onceStrict(this)
+    },
+    configurable: true
+  })
+})
 
-const windowsRelease = release => {
-	const version = /\d+\.\d/.exec(release || os.release());
+function once (fn) {
+  var f = function () {
+    if (f.called) return f.value
+    f.called = true
+    return f.value = fn.apply(this, arguments)
+  }
+  f.called = false
+  return f
+}
 
-	if (release && !version) {
-		throw new Error('`release` argument doesn\'t match `n.n`');
-	}
-
-	const ver = (version || [])[0];
-
-	// Server 2008, 2012, 2016, and 2019 versions are ambiguous with desktop versions and must be detected at runtime.
-	// If `release` is omitted or we're on a Windows system, and the version number is an ambiguous version
-	// then use `wmic` to get the OS caption: https://msdn.microsoft.com/en-us/library/aa394531(v=vs.85).aspx
-	// If `wmic` is obsoloete (later versions of Windows 10), use PowerShell instead.
-	// If the resulting caption contains the year 2008, 2012, 2016 or 2019, it is a server version, so return a server OS name.
-	if ((!release || release === os.release()) && ['6.1', '6.2', '6.3', '10.0'].includes(ver)) {
-		let stdout;
-		try {
-			stdout = execa.sync('wmic', ['os', 'get', 'Caption']).stdout || '';
-		} catch (_) {
-			stdout = execa.sync('powershell', ['(Get-CimInstance -ClassName Win32_OperatingSystem).caption']).stdout || '';
-		}
-
-		const year = (stdout.match(/2008|2012|2016|2019/) || [])[0];
-
-		if (year) {
-			return `Server ${year}`;
-		}
-	}
-
-	return names.get(ver);
-};
-
-module.exports = windowsRelease;
+function onceStrict (fn) {
+  var f = function () {
+    if (f.called)
+      throw new Error(f.onceError)
+    f.called = true
+    return f.value = fn.apply(this, arguments)
+  }
+  var name = fn.name || 'Function wrapped with `once`'
+  f.onceError = name + " shouldn't be called more than once"
+  f.called = false
+  return f
+}
 
 
 /***/ }),
@@ -3510,7 +3547,7 @@ const asStream = __webpack_require__(831);
 const asPromise = __webpack_require__(916);
 const normalizeArguments = __webpack_require__(847);
 const merge = __webpack_require__(821);
-const deepFreeze = __webpack_require__(262);
+const deepFreeze = __webpack_require__(879);
 
 const getPromiseOrStream = options => options.stream ? asStream(options) : asPromise(options);
 
@@ -4069,133 +4106,7 @@ module.exports = {
 
 
 /***/ }),
-/* 66 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-/* -*- Mode: js; js-indent-level: 2; -*- */
-/*
- * Copyright 2011 Mozilla Foundation and contributors
- * Licensed under the New BSD license. See LICENSE or:
- * http://opensource.org/licenses/BSD-3-Clause
- */
-
-var util = __webpack_require__(290);
-var has = Object.prototype.hasOwnProperty;
-var hasNativeMap = typeof Map !== "undefined";
-
-/**
- * A data structure which is a combination of an array and a set. Adding a new
- * member is O(1), testing for membership is O(1), and finding the index of an
- * element is O(1). Removing elements from the set is not supported. Only
- * strings are supported for membership.
- */
-function ArraySet() {
-  this._array = [];
-  this._set = hasNativeMap ? new Map() : Object.create(null);
-}
-
-/**
- * Static method for creating ArraySet instances from an existing array.
- */
-ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
-  var set = new ArraySet();
-  for (var i = 0, len = aArray.length; i < len; i++) {
-    set.add(aArray[i], aAllowDuplicates);
-  }
-  return set;
-};
-
-/**
- * Return how many unique items are in this ArraySet. If duplicates have been
- * added, than those do not count towards the size.
- *
- * @returns Number
- */
-ArraySet.prototype.size = function ArraySet_size() {
-  return hasNativeMap ? this._set.size : Object.getOwnPropertyNames(this._set).length;
-};
-
-/**
- * Add the given string to this set.
- *
- * @param String aStr
- */
-ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
-  var sStr = hasNativeMap ? aStr : util.toSetString(aStr);
-  var isDuplicate = hasNativeMap ? this.has(aStr) : has.call(this._set, sStr);
-  var idx = this._array.length;
-  if (!isDuplicate || aAllowDuplicates) {
-    this._array.push(aStr);
-  }
-  if (!isDuplicate) {
-    if (hasNativeMap) {
-      this._set.set(aStr, idx);
-    } else {
-      this._set[sStr] = idx;
-    }
-  }
-};
-
-/**
- * Is the given string a member of this set?
- *
- * @param String aStr
- */
-ArraySet.prototype.has = function ArraySet_has(aStr) {
-  if (hasNativeMap) {
-    return this._set.has(aStr);
-  } else {
-    var sStr = util.toSetString(aStr);
-    return has.call(this._set, sStr);
-  }
-};
-
-/**
- * What is the index of the given string in the array?
- *
- * @param String aStr
- */
-ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
-  if (hasNativeMap) {
-    var idx = this._set.get(aStr);
-    if (idx >= 0) {
-        return idx;
-    }
-  } else {
-    var sStr = util.toSetString(aStr);
-    if (has.call(this._set, sStr)) {
-      return this._set[sStr];
-    }
-  }
-
-  throw new Error('"' + aStr + '" is not in the set.');
-};
-
-/**
- * What is the element at the given index?
- *
- * @param Number aIdx
- */
-ArraySet.prototype.at = function ArraySet_at(aIdx) {
-  if (aIdx >= 0 && aIdx < this._array.length) {
-    return this._array[aIdx];
-  }
-  throw new Error('No element indexed by ' + aIdx);
-};
-
-/**
- * Returns the array representation of this set (which has the proper indices
- * indicated by indexOf). Note that this is a copy of the internal array used
- * for storing the members so that no one can mess with internal state.
- */
-ArraySet.prototype.toArray = function ArraySet_toArray() {
-  return this._array.slice();
-};
-
-exports.ArraySet = ArraySet;
-
-
-/***/ }),
+/* 66 */,
 /* 67 */,
 /* 68 */,
 /* 69 */,
@@ -4220,78 +4131,201 @@ if (typeof Symbol === undefined || !Symbol.asyncIterator) {
 
 /***/ }),
 /* 72 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
-const {PassThrough} = __webpack_require__(794);
 
-module.exports = options => {
-	options = Object.assign({}, options);
+Object.defineProperty(exports, '__esModule', { value: true });
 
-	const {array} = options;
-	let {encoding} = options;
-	const buffer = encoding === 'buffer';
-	let objectMode = false;
+var universalUserAgent = __webpack_require__(26);
+var beforeAfterHook = __webpack_require__(523);
+var request = __webpack_require__(317);
+var graphql = __webpack_require__(743);
+var authToken = __webpack_require__(813);
 
-	if (array) {
-		objectMode = !(encoding || buffer);
-	} else {
-		encoding = encoding || 'utf8';
-	}
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
 
-	if (buffer) {
-		encoding = null;
-	}
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
+  }
 
-	let len = 0;
-	const ret = [];
-	const stream = new PassThrough({objectMode});
+  return target;
+}
 
-	if (encoding) {
-		stream.setEncoding(encoding);
-	}
+function _objectWithoutProperties(source, excluded) {
+  if (source == null) return {};
 
-	stream.on('data', chunk => {
-		ret.push(chunk);
+  var target = _objectWithoutPropertiesLoose(source, excluded);
 
-		if (objectMode) {
-			len = ret.length;
-		} else {
-			len += chunk.length;
-		}
-	});
+  var key, i;
 
-	stream.getBufferedValue = () => {
-		if (array) {
-			return ret;
-		}
+  if (Object.getOwnPropertySymbols) {
+    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
 
-		return buffer ? Buffer.concat(ret, len) : ret.join('');
-	};
+    for (i = 0; i < sourceSymbolKeys.length; i++) {
+      key = sourceSymbolKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+      target[key] = source[key];
+    }
+  }
 
-	stream.getBufferedLength = () => len;
+  return target;
+}
 
-	return stream;
-};
+const VERSION = "3.2.0";
+
+class Octokit {
+  constructor(options = {}) {
+    const hook = new beforeAfterHook.Collection();
+    const requestDefaults = {
+      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
+      headers: {},
+      request: Object.assign({}, options.request, {
+        hook: hook.bind(null, "request")
+      }),
+      mediaType: {
+        previews: [],
+        format: ""
+      }
+    }; // prepend default user agent with `options.userAgent` if set
+
+    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
+
+    if (options.baseUrl) {
+      requestDefaults.baseUrl = options.baseUrl;
+    }
+
+    if (options.previews) {
+      requestDefaults.mediaType.previews = options.previews;
+    }
+
+    if (options.timeZone) {
+      requestDefaults.headers["time-zone"] = options.timeZone;
+    }
+
+    this.request = request.request.defaults(requestDefaults);
+    this.graphql = graphql.withCustomRequest(this.request).defaults(requestDefaults);
+    this.log = Object.assign({
+      debug: () => {},
+      info: () => {},
+      warn: console.warn.bind(console),
+      error: console.error.bind(console)
+    }, options.log);
+    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
+    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registered.
+    // (2) If only `options.auth` is set, use the default token authentication strategy.
+    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
+    // TODO: type `options.auth` based on `options.authStrategy`.
+
+    if (!options.authStrategy) {
+      if (!options.auth) {
+        // (1)
+        this.auth = async () => ({
+          type: "unauthenticated"
+        });
+      } else {
+        // (2)
+        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
+
+        hook.wrap("request", auth.hook);
+        this.auth = auth;
+      }
+    } else {
+      const {
+        authStrategy
+      } = options,
+            otherOptions = _objectWithoutProperties(options, ["authStrategy"]);
+
+      const auth = authStrategy(Object.assign({
+        request: this.request,
+        log: this.log,
+        // we pass the current octokit instance as well as its constructor options
+        // to allow for authentication strategies that return a new octokit instance
+        // that shares the same internal state as the current one. The original
+        // requirement for this was the "event-octokit" authentication strategy
+        // of https://github.com/probot/octokit-auth-probot.
+        octokit: this,
+        octokitOptions: otherOptions
+      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
+
+      hook.wrap("request", auth.hook);
+      this.auth = auth;
+    } // apply plugins
+    // https://stackoverflow.com/a/16345172
+
+
+    const classConstructor = this.constructor;
+    classConstructor.plugins.forEach(plugin => {
+      Object.assign(this, plugin(this, options));
+    });
+  }
+
+  static defaults(defaults) {
+    const OctokitWithDefaults = class extends this {
+      constructor(...args) {
+        const options = args[0] || {};
+
+        if (typeof defaults === "function") {
+          super(defaults(options));
+          return;
+        }
+
+        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
+          userAgent: `${options.userAgent} ${defaults.userAgent}`
+        } : null));
+      }
+
+    };
+    return OctokitWithDefaults;
+  }
+  /**
+   * Attach a plugin (or many) to your Octokit instance.
+   *
+   * @example
+   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+   */
+
+
+  static plugin(...newPlugins) {
+    var _a;
+
+    const currentPlugins = this.plugins;
+    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
+    return NewOctokit;
+  }
+
+}
+Octokit.VERSION = VERSION;
+Octokit.plugins = [];
+
+exports.Octokit = Octokit;
+//# sourceMappingURL=index.js.map
 
 
 /***/ }),
 /* 73 */
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-/* eslint-disable node/no-deprecated-api */
-module.exports = function (size) {
-  if (typeof Buffer.allocUnsafe === 'function') {
-    try {
-      return Buffer.allocUnsafe(size)
-    } catch (e) {
-      return new Buffer(size)
+var colors = __webpack_require__(882);
+
+module.exports = (function() {
+  return function (letter, i, exploded) {
+    if(letter === " ") return letter;
+    switch(i%3) {
+      case 0: return colors.red(letter);
+      case 1: return colors.white(letter)
+      case 2: return colors.blue(letter)
     }
   }
-  return new Buffer(size)
-}
-
+})();
 
 /***/ }),
 /* 74 */
@@ -7108,8 +7142,10 @@ exports.issueCommand = issueCommand;
 const { restoreCache, saveCache } = __webpack_require__(692)
 const core = __webpack_require__(470)
 const exec = __webpack_require__(986)
+const github = __webpack_require__(469)
 const io = __webpack_require__(1)
 const { Octokit } = __webpack_require__(448)
+const Table = __webpack_require__(886)
 const hasha = __webpack_require__(309)
 const got = __webpack_require__(798)
 const fs = __webpack_require__(747)
@@ -7643,12 +7679,14 @@ const runTests = async () => {
   const customCommand = core.getInput('command')
   if (customCommand) {
     console.log('Using custom test command: %s', customCommand)
-    return execCommand(customCommand, true, 'run tests')
+    await execCommand(customCommand, true, 'run tests')
+    return
   }
 
   const commandPrefix = core.getInput('command-prefix')
   if (commandPrefix) {
-    return runTestsUsingCommandLine()
+    await runTestsUsingCommandLine()
+    return
   }
 
   core.debug('Running Cypress tests using NPM module API')
@@ -7740,6 +7778,8 @@ const runTests = async () => {
         new Error(`Cypress tests: ${testResults.totalFailed} failed`)
       )
     }
+
+    return Promise.resolve(testResults)
   }
 
   const onTestsError = e => {
@@ -7786,11 +7826,260 @@ const installMaybe = () => {
   })
 }
 
+/**
+ * Left pad a string to a specified length
+ * @param {string} value The string to pad
+ * @param {number} length How long the final string should be
+ * @see https://stackoverflow.com/a/13859571
+ */
+const leftPad = (value, length) => {
+  return value.toString().length < length
+    ? leftPad('0' + value, length)
+    : value
+}
+
+/**
+ * Format duration from milliseconds to mm:ss.SSS
+ * @param {number} duration Duration in milliseconds
+ */
+const formatDuration = duration => {
+  const minutes = Math.floor(duration / 60000).toString()
+  const seconds = Math.floor((duration % 60000) / 1000).toString()
+  const millis = Math.floor((duration % 60000) % 1000).toString()
+
+  return (
+    leftPad(minutes, 2) +
+    ':' +
+    leftPad(seconds, 2) +
+    '.' +
+    leftPad(millis, 3)
+  )
+}
+
+const formatResults = results => {
+  const {
+    runs,
+    totalTests,
+    totalPassed,
+    totalFailed,
+    totalSkipped,
+    totalDuration
+  } = results
+
+  const header = [
+    '',
+    'Suite',
+    'Duration',
+    'Tests',
+    'Passing',
+    'Failing'
+  ]
+
+  if (totalSkipped > 0) {
+    header.push('Skipped')
+  }
+
+  const rows = []
+
+  for (const run of runs) {
+    const newRow = [
+      run.stats.failures > 0 ? '✘' : '✔',
+      run.spec.name,
+      formatDuration(run.stats.duration),
+      run.stats.tests + '',
+      run.stats.passes + '',
+      (run.stats.failures || '-') + ''
+    ]
+
+    if (totalSkipped > 0) {
+      newRow.push((run.stats.skipped || '-') + '')
+    }
+
+    rows.push(newRow)
+  }
+
+  const footer = [totalFailed > 0 ? '✘' : '✔']
+  if (totalFailed > 0) {
+    const percentFailed = Math.round((totalFailed / totalTests) * 100)
+
+    footer.push(
+      `${totalFailed} of ${totalTests} failed (${percentFailed}%)`
+    )
+  } else {
+    footer.push('All specs passed!')
+  }
+
+  footer.push(
+    formatDuration(totalDuration),
+    totalTests + '',
+    totalPassed + '',
+    (totalFailed || '-') + ''
+  )
+
+  if (totalSkipped > 0) {
+    footer.push(totalSkipped + '')
+  }
+
+  const colWidths = header.map((_, colIndex) =>
+    rows.reduce(
+      (acc, row) => Math.max(acc, row[colIndex].length + 2),
+      0
+    )
+  )
+
+  const colAligns = colWidths.map((_, i) =>
+    i === 1 ? 'left' : 'right'
+  )
+
+  const tableOptions = {
+    colAligns,
+    colWidths,
+    chars: {
+      top: '',
+      'top-mid': '',
+      'top-right': '',
+      right: '',
+      'right-mid': '',
+      'bottom-right': '',
+      bottom: '',
+      'bottom-mid': '',
+      'bottom-left': '',
+      left: '',
+      'left-mid': '',
+      'top-left': '',
+      mid: '',
+      'mid-mid': ''
+    }
+  }
+
+  const headerTable = new Table(tableOptions)
+  headerTable.push(header)
+
+  const footerTable = new Table(tableOptions)
+  footerTable.push(footer)
+
+  const dataTable = new Table({
+    ...tableOptions,
+    chars: {
+      top: '─',
+      'top-mid': '',
+      'top-right': '┐',
+      right: '|',
+      'right-mid': '┤',
+      'bottom-right': '┘',
+      bottom: '─',
+      'bottom-mid': '',
+      'bottom-left': '└',
+      left: '│',
+      'left-mid': '├',
+      'top-left': '┌',
+      mid: '-',
+      'mid-mid': ''
+    }
+  })
+  dataTable.push(...rows)
+
+  return [
+    headerTable.toString(),
+    dataTable.toString(),
+    footerTable.toString()
+  ].join('\n')
+}
+
+const commentOnPullRequestMaybe = async results => {
+  const githubToken =
+    core.getInput('github-token') || process.env['GITHUB_TOKEN']
+  const githubUserLogin =
+    core.getInput('github-user-login') || 'github-actions[bot]'
+  const commentOnPullRequest = getInputBool(
+    'comment-on-pull-request',
+    false
+  )
+
+  if (!commentOnPullRequest) {
+    console.log(
+      'Skipping pull request comment because comment-on-pull-request parameter is false'
+    )
+
+    return
+  }
+
+  if (!githubToken) {
+    throw new Error(
+      'Missing github token for pull request comment, set one to github-token input or GITHUB_TOKEN environment variable'
+    )
+  }
+
+  if (!github.context.payload.pull_request) {
+    console.log(
+      'Can only comment on pull requests when the workflow is run from a pull request'
+    )
+
+    return
+  }
+
+  if (!results.cypressVersion) {
+    console.log(
+      'Unable to read results, if you are using command or command-prefix then comments will not be made on pull requests'
+    )
+
+    return
+  }
+
+  const octokit = github.getOctokit(githubToken)
+
+  const { data: comments } = await octokit.issues.listComments({
+    ...github.context.repo,
+    issue_number: github.context.payload.pull_request.number
+  })
+
+  const currentComment = comments.find(
+    comment =>
+      comment.user.login === githubUserLogin &&
+      comment.body.indexOf('## Cypress Request') === 0
+  )
+
+  const shortSha = github.context.sha.substr(0, 7)
+
+  const body = [
+    results.runUrl
+      ? `## [Cypress](${results.runUrl}) Results`
+      : '## Cypress Results',
+    '',
+    '```diff',
+    formatResults(results),
+    '```',
+    '',
+    '---',
+    '',
+    results.runUrl
+      ? `[View runs on the Dashboard](${results.runUrl})`
+      : `[Test and debug faster with the Cypress Dashboard](https://www.cypress.io/dashboard)`,
+    `> Powered by [Cypress.io](https://www.cypress.io/). Last update **${shortSha}**.`
+  ].join('\n')
+
+  if (currentComment) {
+    await octokit.issues.updateComment({
+      ...github.context.repo,
+      comment_id: currentComment.id,
+      issue_number: github.context.payload.pull_request.number,
+      body
+    })
+  } else {
+    await octokit.issues.createComment({
+      ...github.context.repo,
+      issue_number: github.context.payload.pull_request.number,
+      body
+    })
+  }
+}
+
 installMaybe()
   .then(buildAppMaybe)
   .then(startServerMaybe)
   .then(waitOnMaybe)
   .then(runTests)
+  .then(commentOnPullRequestMaybe)
   .then(() => {
     core.debug('all done, exiting')
     // force exit to avoid waiting for child processes,
@@ -8695,1029 +8984,52 @@ module.exports = function union(init) {
 
 /***/ }),
 /* 127 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
-
-var typeOf = __webpack_require__(525);
-var utils = module.exports;
-
-/**
- * Returns true if the given value is a node.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var node = new Node({type: 'foo'});
- * console.log(utils.isNode(node)); //=> true
- * console.log(utils.isNode({})); //=> false
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @returns {Boolean}
- * @api public
- */
-
-utils.isNode = function(node) {
-  return typeOf(node) === 'object' && node.isNode === true;
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
-
-/**
- * Emit an empty string for the given `node`.
- *
- * ```js
- * // do nothing for beginning-of-string
- * snapdragon.compiler.set('bos', utils.noop);
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @returns {undefined}
- * @api public
- */
-
-utils.noop = function(node) {
-  append(this, '', node);
-};
-
-/**
- * Appdend `node.val` to `compiler.output`, exactly as it was created
- * by the parser.
- *
- * ```js
- * snapdragon.compiler.set('text', utils.identity);
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @returns {undefined}
- * @api public
- */
-
-utils.identity = function(node) {
-  append(this, node.val, node);
-};
-
-/**
- * Previously named `.emit`, this method appends the given `val`
- * to `compiler.output` for the given node. Useful when you know
- * what value should be appended advance, regardless of the actual
- * value of `node.val`.
- *
- * ```js
- * snapdragon.compiler
- *   .set('i', function(node) {
- *     this.mapVisit(node);
- *   })
- *   .set('i.open', utils.append('<i>'))
- *   .set('i.close', utils.append('</i>'))
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @returns {Function} Returns a compiler middleware function.
- * @api public
- */
-
-utils.append = function(val) {
-  return function(node) {
-    append(this, val, node);
-  };
-};
-
-/**
- * Used in compiler middleware, this onverts an AST node into
- * an empty `text` node and deletes `node.nodes` if it exists.
- * The advantage of this method is that, as opposed to completely
- * removing the node, indices will not need to be re-calculated
- * in sibling nodes, and nothing is appended to the output.
- *
- * ```js
- * utils.toNoop(node);
- * // convert `node.nodes` to the given value instead of deleting it
- * utils.toNoop(node, []);
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Array} `nodes` Optionally pass a new `nodes` value, to replace the existing `node.nodes` array.
- * @api public
- */
-
-utils.toNoop = function(node, nodes) {
-  if (nodes) {
-    node.nodes = nodes;
-  } else {
-    delete node.nodes;
-    node.type = 'text';
-    node.val = '';
-  }
-};
-
-/**
- * Visit `node` with the given `fn`. The built-in `.visit` method in snapdragon
- * automatically calls registered compilers, this allows you to pass a visitor
- * function.
- *
- * ```js
- * snapdragon.compiler.set('i', function(node) {
- *   utils.visit(node, function(childNode) {
- *     // do stuff with "childNode"
- *     return childNode;
- *   });
- * });
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Function} `fn`
- * @return {Object} returns the node after recursively visiting all child nodes.
- * @api public
- */
-
-utils.visit = function(node, fn) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isFunction(fn), 'expected a visitor function');
-  fn(node);
-  return node.nodes ? utils.mapVisit(node, fn) : node;
-};
-
-/**
- * Map [visit](#visit) the given `fn` over `node.nodes`. This is called by
- * [visit](#visit), use this method if you do not want `fn` to be called on
- * the first node.
- *
- * ```js
- * snapdragon.compiler.set('i', function(node) {
- *   utils.mapVisit(node, function(childNode) {
- *     // do stuff with "childNode"
- *     return childNode;
- *   });
- * });
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Object} `options`
- * @param {Function} `fn`
- * @return {Object} returns the node
- * @api public
- */
-
-utils.mapVisit = function(node, fn) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isArray(node.nodes), 'expected node.nodes to be an array');
-  assert(isFunction(fn), 'expected a visitor function');
-
-  for (var i = 0; i < node.nodes.length; i++) {
-    utils.visit(node.nodes[i], fn);
-  }
-  return node;
-};
-
-/**
- * Unshift an `*.open` node onto `node.nodes`.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * snapdragon.parser.set('brace', function(node) {
- *   var match = this.match(/^{/);
- *   if (match) {
- *     var parent = new Node({type: 'brace'});
- *     utils.addOpen(parent, Node);
- *     console.log(parent.nodes[0]):
- *     // { type: 'brace.open', val: '' };
- *
- *     // push the parent "brace" node onto the stack
- *     this.push(parent);
- *
- *     // return the parent node, so it's also added to the AST
- *     return brace;
- *   }
- * });
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
- * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
- * @return {Object} Returns the created opening node.
- * @api public
- */
-
-utils.addOpen = function(node, Node, val, filter) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isFunction(Node), 'expected Node to be a constructor function');
-
-  if (typeof val === 'function') {
-    filter = val;
-    val = '';
-  }
-
-  if (typeof filter === 'function' && !filter(node)) return;
-  var open = new Node({ type: node.type + '.open', val: val});
-  var unshift = node.unshift || node.unshiftNode;
-  if (typeof unshift === 'function') {
-    unshift.call(node, open);
-  } else {
-    utils.unshiftNode(node, open);
-  }
-  return open;
-};
-
-/**
- * Push a `*.close` node onto `node.nodes`.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * snapdragon.parser.set('brace', function(node) {
- *   var match = this.match(/^}/);
- *   if (match) {
- *     var parent = this.parent();
- *     if (parent.type !== 'brace') {
- *       throw new Error('missing opening: ' + '}');
- *     }
- *
- *     utils.addClose(parent, Node);
- *     console.log(parent.nodes[parent.nodes.length - 1]):
- *     // { type: 'brace.close', val: '' };
- *
- *     // no need to return a node, since the parent
- *     // was already added to the AST
- *     return;
- *   }
- * });
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
- * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
- * @return {Object} Returns the created closing node.
- * @api public
- */
-
-utils.addClose = function(node, Node, val, filter) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isFunction(Node), 'expected Node to be a constructor function');
-
-  if (typeof val === 'function') {
-    filter = val;
-    val = '';
-  }
-
-  if (typeof filter === 'function' && !filter(node)) return;
-  var close = new Node({ type: node.type + '.close', val: val});
-  var push = node.push || node.pushNode;
-  if (typeof push === 'function') {
-    push.call(node, close);
-  } else {
-    utils.pushNode(node, close);
-  }
-  return close;
-};
-
-/**
- * Wraps the given `node` with `*.open` and `*.close` nodes.
- *
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
- * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
- * @return {Object} Returns the node
- * @api public
- */
-
-utils.wrapNodes = function(node, Node, filter) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isFunction(Node), 'expected Node to be a constructor function');
-
-  utils.addOpen(node, Node, filter);
-  utils.addClose(node, Node, filter);
-  return node;
-};
-
-/**
- * Push the given `node` onto `parent.nodes`, and set `parent` as `node.parent.
- *
- * ```js
- * var parent = new Node({type: 'foo'});
- * var node = new Node({type: 'bar'});
- * utils.pushNode(parent, node);
- * console.log(parent.nodes[0].type) // 'bar'
- * console.log(node.parent.type) // 'foo'
- * ```
- * @param {Object} `parent`
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Object} Returns the child node
- * @api public
- */
-
-utils.pushNode = function(parent, node) {
-  assert(utils.isNode(parent), 'expected parent node to be an instance of Node');
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-
-  node.define('parent', parent);
-  parent.nodes = parent.nodes || [];
-  parent.nodes.push(node);
-  return node;
-};
-
-/**
- * Unshift `node` onto `parent.nodes`, and set `parent` as `node.parent.
- *
- * ```js
- * var parent = new Node({type: 'foo'});
- * var node = new Node({type: 'bar'});
- * utils.unshiftNode(parent, node);
- * console.log(parent.nodes[0].type) // 'bar'
- * console.log(node.parent.type) // 'foo'
- * ```
- * @param {Object} `parent`
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {undefined}
- * @api public
- */
-
-utils.unshiftNode = function(parent, node) {
-  assert(utils.isNode(parent), 'expected parent node to be an instance of Node');
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-
-  node.define('parent', parent);
-  parent.nodes = parent.nodes || [];
-  parent.nodes.unshift(node);
-};
-
-/**
- * Pop the last `node` off of `parent.nodes`. The advantage of
- * using this method is that it checks for `node.nodes` and works
- * with any version of `snapdragon-node`.
- *
- * ```js
- * var parent = new Node({type: 'foo'});
- * utils.pushNode(parent, new Node({type: 'foo'}));
- * utils.pushNode(parent, new Node({type: 'bar'}));
- * utils.pushNode(parent, new Node({type: 'baz'}));
- * console.log(parent.nodes.length); //=> 3
- * utils.popNode(parent);
- * console.log(parent.nodes.length); //=> 2
- * ```
- * @param {Object} `parent`
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Number|Undefined} Returns the length of `node.nodes` or undefined.
- * @api public
- */
-
-utils.popNode = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  if (typeof node.pop === 'function') {
-    return node.pop();
-  }
-  return node.nodes && node.nodes.pop();
-};
-
-/**
- * Shift the first `node` off of `parent.nodes`. The advantage of
- * using this method is that it checks for `node.nodes` and works
- * with any version of `snapdragon-node`.
- *
- * ```js
- * var parent = new Node({type: 'foo'});
- * utils.pushNode(parent, new Node({type: 'foo'}));
- * utils.pushNode(parent, new Node({type: 'bar'}));
- * utils.pushNode(parent, new Node({type: 'baz'}));
- * console.log(parent.nodes.length); //=> 3
- * utils.shiftNode(parent);
- * console.log(parent.nodes.length); //=> 2
- * ```
- * @param {Object} `parent`
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Number|Undefined} Returns the length of `node.nodes` or undefined.
- * @api public
- */
-
-utils.shiftNode = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  if (typeof node.shift === 'function') {
-    return node.shift();
-  }
-  return node.nodes && node.nodes.shift();
-};
-
-/**
- * Remove the specified `node` from `parent.nodes`.
- *
- * ```js
- * var parent = new Node({type: 'abc'});
- * var foo = new Node({type: 'foo'});
- * utils.pushNode(parent, foo);
- * utils.pushNode(parent, new Node({type: 'bar'}));
- * utils.pushNode(parent, new Node({type: 'baz'}));
- * console.log(parent.nodes.length); //=> 3
- * utils.removeNode(parent, foo);
- * console.log(parent.nodes.length); //=> 2
- * ```
- * @param {Object} `parent`
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Object|undefined} Returns the removed node, if successful, or undefined if it does not exist on `parent.nodes`.
- * @api public
- */
-
-utils.removeNode = function(parent, node) {
-  assert(utils.isNode(parent), 'expected parent.node to be an instance of Node');
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-
-  if (!parent.nodes) {
-    return null;
-  }
-
-  if (typeof parent.remove === 'function') {
-    return parent.remove(node);
-  }
-
-  var idx = parent.nodes.indexOf(node);
-  if (idx !== -1) {
-    return parent.nodes.splice(idx, 1);
-  }
-};
-
-/**
- * Returns true if `node.type` matches the given `type`. Throws a
- * `TypeError` if `node` is not an instance of `Node`.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var node = new Node({type: 'foo'});
- * console.log(utils.isType(node, 'foo')); // false
- * console.log(utils.isType(node, 'bar')); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {String} `type`
- * @return {Boolean}
- * @api public
- */
-
-utils.isType = function(node, type) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  switch (typeOf(type)) {
-    case 'array':
-      var types = type.slice();
-      for (var i = 0; i < types.length; i++) {
-        if (utils.isType(node, types[i])) {
-          return true;
-        }
-      }
-      return false;
-    case 'string':
-      return node.type === type;
-    case 'regexp':
-      return type.test(node.type);
-    default: {
-      throw new TypeError('expected "type" to be an array, string or regexp');
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getApiBaseUrl = exports.getProxyAgent = exports.getAuthString = void 0;
+const httpClient = __importStar(__webpack_require__(539));
+function getAuthString(token, options) {
+    if (!token && !options.auth) {
+        throw new Error('Parameter token or opts.auth is required');
     }
-  }
-};
-
-/**
- * Returns true if the given `node` has the given `type` in `node.nodes`.
- * Throws a `TypeError` if `node` is not an instance of `Node`.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var node = new Node({
- *   type: 'foo',
- *   nodes: [
- *     new Node({type: 'bar'}),
- *     new Node({type: 'baz'})
- *   ]
- * });
- * console.log(utils.hasType(node, 'xyz')); // false
- * console.log(utils.hasType(node, 'baz')); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {String} `type`
- * @return {Boolean}
- * @api public
- */
-
-utils.hasType = function(node, type) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  if (!Array.isArray(node.nodes)) return false;
-  for (var i = 0; i < node.nodes.length; i++) {
-    if (utils.isType(node.nodes[i], type)) {
-      return true;
+    else if (token && options.auth) {
+        throw new Error('Parameters token and opts.auth may not both be specified');
     }
-  }
-  return false;
-};
-
-/**
- * Returns the first node from `node.nodes` of the given `type`
- *
- * ```js
- * var node = new Node({
- *   type: 'foo',
- *   nodes: [
- *     new Node({type: 'text', val: 'abc'}),
- *     new Node({type: 'text', val: 'xyz'})
- *   ]
- * });
- *
- * var textNode = utils.firstOfType(node.nodes, 'text');
- * console.log(textNode.val);
- * //=> 'abc'
- * ```
- * @param {Array} `nodes`
- * @param {String} `type`
- * @return {Object|undefined} Returns the first matching node or undefined.
- * @api public
- */
-
-utils.firstOfType = function(nodes, type) {
-  for (var i = 0; i < nodes.length; i++) {
-    var node = nodes[i];
-    if (utils.isType(node, type)) {
-      return node;
-    }
-  }
-};
-
-/**
- * Returns the node at the specified index, or the first node of the
- * given `type` from `node.nodes`.
- *
- * ```js
- * var node = new Node({
- *   type: 'foo',
- *   nodes: [
- *     new Node({type: 'text', val: 'abc'}),
- *     new Node({type: 'text', val: 'xyz'})
- *   ]
- * });
- *
- * var nodeOne = utils.findNode(node.nodes, 'text');
- * console.log(nodeOne.val);
- * //=> 'abc'
- *
- * var nodeTwo = utils.findNode(node.nodes, 1);
- * console.log(nodeTwo.val);
- * //=> 'xyz'
- * ```
- *
- * @param {Array} `nodes`
- * @param {String|Number} `type` Node type or index.
- * @return {Object} Returns a node or undefined.
- * @api public
- */
-
-utils.findNode = function(nodes, type) {
-  if (!Array.isArray(nodes)) {
-    return null;
-  }
-  if (typeof type === 'number') {
-    return nodes[type];
-  }
-  return utils.firstOfType(nodes, type);
-};
-
-/**
- * Returns true if the given node is an "*.open" node.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var brace = new Node({type: 'brace'});
- * var open = new Node({type: 'brace.open'});
- * var close = new Node({type: 'brace.close'});
- *
- * console.log(utils.isOpen(brace)); // false
- * console.log(utils.isOpen(open)); // true
- * console.log(utils.isOpen(close)); // false
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Boolean}
- * @api public
- */
-
-utils.isOpen = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  return node.type.slice(-5) === '.open';
-};
-
-/**
- * Returns true if the given node is a "*.close" node.
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var brace = new Node({type: 'brace'});
- * var open = new Node({type: 'brace.open'});
- * var close = new Node({type: 'brace.close'});
- *
- * console.log(utils.isClose(brace)); // false
- * console.log(utils.isClose(open)); // false
- * console.log(utils.isClose(close)); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Boolean}
- * @api public
- */
-
-utils.isClose = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  return node.type.slice(-6) === '.close';
-};
-
-/**
- * Returns true if `node.nodes` **has** an `.open` node
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var brace = new Node({
- *   type: 'brace',
- *   nodes: []
- * });
- *
- * var open = new Node({type: 'brace.open'});
- * console.log(utils.hasOpen(brace)); // false
- *
- * brace.pushNode(open);
- * console.log(utils.hasOpen(brace)); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Boolean}
- * @api public
- */
-
-utils.hasOpen = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  var first = node.first || node.nodes ? node.nodes[0] : null;
-  if (utils.isNode(first)) {
-    return first.type === node.type + '.open';
-  }
-  return false;
-};
-
-/**
- * Returns true if `node.nodes` **has** a `.close` node
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var brace = new Node({
- *   type: 'brace',
- *   nodes: []
- * });
- *
- * var close = new Node({type: 'brace.close'});
- * console.log(utils.hasClose(brace)); // false
- *
- * brace.pushNode(close);
- * console.log(utils.hasClose(brace)); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Boolean}
- * @api public
- */
-
-utils.hasClose = function(node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  var last = node.last || node.nodes ? node.nodes[node.nodes.length - 1] : null;
-  if (utils.isNode(last)) {
-    return last.type === node.type + '.close';
-  }
-  return false;
-};
-
-/**
- * Returns true if `node.nodes` has both `.open` and `.close` nodes
- *
- * ```js
- * var Node = require('snapdragon-node');
- * var brace = new Node({
- *   type: 'brace',
- *   nodes: []
- * });
- *
- * var open = new Node({type: 'brace.open'});
- * var close = new Node({type: 'brace.close'});
- * console.log(utils.hasOpen(brace)); // false
- * console.log(utils.hasClose(brace)); // false
- *
- * brace.pushNode(open);
- * brace.pushNode(close);
- * console.log(utils.hasOpen(brace)); // true
- * console.log(utils.hasClose(brace)); // true
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Boolean}
- * @api public
- */
-
-utils.hasOpenAndClose = function(node) {
-  return utils.hasOpen(node) && utils.hasClose(node);
-};
-
-/**
- * Push the given `node` onto the `state.inside` array for the
- * given type. This array is used as a specialized "stack" for
- * only the given `node.type`.
- *
- * ```js
- * var state = { inside: {}};
- * var node = new Node({type: 'brace'});
- * utils.addType(state, node);
- * console.log(state.inside);
- * //=> { brace: [{type: 'brace'}] }
- * ```
- * @param {Object} `state` The `compiler.state` object or custom state object.
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Array} Returns the `state.inside` stack for the given type.
- * @api public
- */
-
-utils.addType = function(state, node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isObject(state), 'expected state to be an object');
-
-  var type = node.parent
-    ? node.parent.type
-    : node.type.replace(/\.open$/, '');
-
-  if (!state.hasOwnProperty('inside')) {
-    state.inside = {};
-  }
-  if (!state.inside.hasOwnProperty(type)) {
-    state.inside[type] = [];
-  }
-
-  var arr = state.inside[type];
-  arr.push(node);
-  return arr;
-};
-
-/**
- * Remove the given `node` from the `state.inside` array for the
- * given type. This array is used as a specialized "stack" for
- * only the given `node.type`.
- *
- * ```js
- * var state = { inside: {}};
- * var node = new Node({type: 'brace'});
- * utils.addType(state, node);
- * console.log(state.inside);
- * //=> { brace: [{type: 'brace'}] }
- * utils.removeType(state, node);
- * //=> { brace: [] }
- * ```
- * @param {Object} `state` The `compiler.state` object or custom state object.
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @return {Array} Returns the `state.inside` stack for the given type.
- * @api public
- */
-
-utils.removeType = function(state, node) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isObject(state), 'expected state to be an object');
-
-  var type = node.parent
-    ? node.parent.type
-    : node.type.replace(/\.close$/, '');
-
-  if (state.inside.hasOwnProperty(type)) {
-    return state.inside[type].pop();
-  }
-};
-
-/**
- * Returns true if `node.val` is an empty string, or `node.nodes` does
- * not contain any non-empty text nodes.
- *
- * ```js
- * var node = new Node({type: 'text'});
- * utils.isEmpty(node); //=> true
- * node.val = 'foo';
- * utils.isEmpty(node); //=> false
- * ```
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {Function} `fn`
- * @return {Boolean}
- * @api public
- */
-
-utils.isEmpty = function(node, fn) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-
-  if (!Array.isArray(node.nodes)) {
-    if (node.type !== 'text') {
-      return true;
-    }
-    if (typeof fn === 'function') {
-      return fn(node, node.parent);
-    }
-    return !utils.trim(node.val);
-  }
-
-  for (var i = 0; i < node.nodes.length; i++) {
-    var child = node.nodes[i];
-    if (utils.isOpen(child) || utils.isClose(child)) {
-      continue;
-    }
-    if (!utils.isEmpty(child, fn)) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
-/**
- * Returns true if the `state.inside` stack for the given type exists
- * and has one or more nodes on it.
- *
- * ```js
- * var state = { inside: {}};
- * var node = new Node({type: 'brace'});
- * console.log(utils.isInsideType(state, 'brace')); //=> false
- * utils.addType(state, node);
- * console.log(utils.isInsideType(state, 'brace')); //=> true
- * utils.removeType(state, node);
- * console.log(utils.isInsideType(state, 'brace')); //=> false
- * ```
- * @param {Object} `state`
- * @param {String} `type`
- * @return {Boolean}
- * @api public
- */
-
-utils.isInsideType = function(state, type) {
-  assert(isObject(state), 'expected state to be an object');
-  assert(isString(type), 'expected type to be a string');
-
-  if (!state.hasOwnProperty('inside')) {
-    return false;
-  }
-
-  if (!state.inside.hasOwnProperty(type)) {
-    return false;
-  }
-
-  return state.inside[type].length > 0;
-};
-
-/**
- * Returns true if `node` is either a child or grand-child of the given `type`,
- * or `state.inside[type]` is a non-empty array.
- *
- * ```js
- * var state = { inside: {}};
- * var node = new Node({type: 'brace'});
- * var open = new Node({type: 'brace.open'});
- * console.log(utils.isInside(state, open, 'brace')); //=> false
- * utils.pushNode(node, open);
- * console.log(utils.isInside(state, open, 'brace')); //=> true
- * ```
- * @param {Object} `state` Either the `compiler.state` object, if it exists, or a user-supplied state object.
- * @param {Object} `node` Instance of [snapdragon-node][]
- * @param {String} `type` The `node.type` to check for.
- * @return {Boolean}
- * @api public
- */
-
-utils.isInside = function(state, node, type) {
-  assert(utils.isNode(node), 'expected node to be an instance of Node');
-  assert(isObject(state), 'expected state to be an object');
-
-  if (Array.isArray(type)) {
-    for (var i = 0; i < type.length; i++) {
-      if (utils.isInside(state, node, type[i])) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  var parent = node.parent;
-  if (typeof type === 'string') {
-    return (parent && parent.type === type) || utils.isInsideType(state, type);
-  }
-
-  if (typeOf(type) === 'regexp') {
-    if (parent && parent.type && type.test(parent.type)) {
-      return true;
-    }
-
-    var keys = Object.keys(state.inside);
-    var len = keys.length;
-    var idx = -1;
-    while (++idx < len) {
-      var key = keys[idx];
-      var val = state.inside[key];
-
-      if (Array.isArray(val) && val.length !== 0 && type.test(key)) {
-        return true;
-      }
-    }
-  }
-  return false;
-};
-
-/**
- * Get the last `n` element from the given `array`. Used for getting
- * a node from `node.nodes.`
- *
- * @param {Array} `array`
- * @param {Number} `n`
- * @return {undefined}
- * @api public
- */
-
-utils.last = function(arr, n) {
-  return arr[arr.length - (n || 1)];
-};
-
-/**
- * Cast the given `val` to an array.
- *
- * ```js
- * console.log(utils.arrayify(''));
- * //=> []
- * console.log(utils.arrayify('foo'));
- * //=> ['foo']
- * console.log(utils.arrayify(['foo']));
- * //=> ['foo']
- * ```
- * @param {any} `val`
- * @return {Array}
- * @api public
- */
-
-utils.arrayify = function(val) {
-  if (typeof val === 'string' && val !== '') {
-    return [val];
-  }
-  if (!Array.isArray(val)) {
-    return [];
-  }
-  return val;
-};
-
-/**
- * Convert the given `val` to a string by joining with `,`. Useful
- * for creating a cheerio/CSS/DOM-style selector from a list of strings.
- *
- * @param {any} `val`
- * @return {Array}
- * @api public
- */
-
-utils.stringify = function(val) {
-  return utils.arrayify(val).join(',');
-};
-
-/**
- * Ensure that the given value is a string and call `.trim()` on it,
- * or return an empty string.
- *
- * @param {String} `str`
- * @return {String}
- * @api public
- */
-
-utils.trim = function(str) {
-  return typeof str === 'string' ? str.trim() : '';
-};
-
-/**
- * Return true if val is an object
- */
-
-function isObject(val) {
-  return typeOf(val) === 'object';
+    return typeof options.auth === 'string' ? options.auth : `token ${token}`;
 }
-
-/**
- * Return true if val is a string
- */
-
-function isString(val) {
-  return typeof val === 'string';
+exports.getAuthString = getAuthString;
+function getProxyAgent(destinationUrl) {
+    const hc = new httpClient.HttpClient();
+    return hc.getAgent(destinationUrl);
 }
-
-/**
- * Return true if val is a function
- */
-
-function isFunction(val) {
-  return typeof val === 'function';
+exports.getProxyAgent = getProxyAgent;
+function getApiBaseUrl() {
+    return process.env['GITHUB_API_URL'] || 'https://api.github.com';
 }
-
-/**
- * Return true if val is an array
- */
-
-function isArray(val) {
-  return Array.isArray(val);
-}
-
-/**
- * Shim to ensure the `.append` methods work with any version of snapdragon
- */
-
-function append(compiler, val, node) {
-  if (typeof compiler.append !== 'function') {
-    return compiler.emit(val, node);
-  }
-  return compiler.append(val, node);
-}
-
-/**
- * Simplified assertion. Throws an error is `val` is falsey.
- */
-
-function assert(val, message) {
-  if (!val) throw new Error(message);
-}
-
+exports.getApiBaseUrl = getApiBaseUrl;
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 /* 128 */
@@ -12181,7 +11493,7 @@ module.exports = outputJson
 const fs = __webpack_require__(598)
 
 const BUF_LENGTH = 64 * 1024
-const _buff = __webpack_require__(73)(BUF_LENGTH)
+const _buff = __webpack_require__(267)(BUF_LENGTH)
 
 function copyFileSync (srcFile, destFile, options) {
   const overwrite = options.overwrite
@@ -12894,123 +12206,1052 @@ exports.default = _default;
 /***/ }),
 /* 198 */,
 /* 199 */
-/***/ (function(__unusedmodule, exports) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-/* -*- Mode: js; js-indent-level: 2; -*- */
-/*
- * Copyright 2011 Mozilla Foundation and contributors
- * Licensed under the New BSD license. See LICENSE or:
- * http://opensource.org/licenses/BSD-3-Clause
- */
-
-exports.GREATEST_LOWER_BOUND = 1;
-exports.LEAST_UPPER_BOUND = 2;
-
-/**
- * Recursive implementation of binary search.
+"use strict";
+/*!
+ * isobject <https://github.com/jonschlinkert/isobject>
  *
- * @param aLow Indices here and lower do not contain the needle.
- * @param aHigh Indices here and higher do not contain the needle.
- * @param aNeedle The element being searched for.
- * @param aHaystack The non-empty array being searched.
- * @param aCompare Function which takes two elements and returns -1, 0, or 1.
- * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
- *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
- *     closest element that is smaller than or greater than the one we are
- *     searching for, respectively, if the exact element cannot be found.
+ * Copyright (c) 2014-2015, Jon Schlinkert.
+ * Licensed under the MIT License.
  */
-function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
-  // This function terminates when one of the following is true:
-  //
-  //   1. We find the exact element we are looking for.
-  //
-  //   2. We did not find the exact element, but we can return the index of
-  //      the next-closest element.
-  //
-  //   3. We did not find the exact element, and there is no next-closest
-  //      element than the one we are searching for, so we return -1.
-  var mid = Math.floor((aHigh - aLow) / 2) + aLow;
-  var cmp = aCompare(aNeedle, aHaystack[mid], true);
-  if (cmp === 0) {
-    // Found the element we are looking for.
-    return mid;
-  }
-  else if (cmp > 0) {
-    // Our needle is greater than aHaystack[mid].
-    if (aHigh - mid > 1) {
-      // The element is in the upper half.
-      return recursiveSearch(mid, aHigh, aNeedle, aHaystack, aCompare, aBias);
-    }
 
-    // The exact needle element was not found in this haystack. Determine if
-    // we are in termination case (3) or (2) and return the appropriate thing.
-    if (aBias == exports.LEAST_UPPER_BOUND) {
-      return aHigh < aHaystack.length ? aHigh : -1;
-    } else {
-      return mid;
-    }
-  }
-  else {
-    // Our needle is less than aHaystack[mid].
-    if (mid - aLow > 1) {
-      // The element is in the lower half.
-      return recursiveSearch(aLow, mid, aNeedle, aHaystack, aCompare, aBias);
-    }
 
-    // we are in termination case (3) or (2) and return the appropriate thing.
-    if (aBias == exports.LEAST_UPPER_BOUND) {
-      return mid;
-    } else {
-      return aLow < 0 ? -1 : aLow;
-    }
-  }
-}
 
-/**
- * This is an implementation of binary search which will always try and return
- * the index of the closest element if there is no exact hit. This is because
- * mappings between original and generated line/col pairs are single points,
- * and there is an implicit region between each of them, so a miss just means
- * that you aren't on the very start of a region.
- *
- * @param aNeedle The element you are looking for.
- * @param aHaystack The array that is being searched.
- * @param aCompare A function which takes the needle and an element in the
- *     array and returns -1, 0, or 1 depending on whether the needle is less
- *     than, equal to, or greater than the element, respectively.
- * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
- *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
- *     closest element that is smaller than or greater than the one we are
- *     searching for, respectively, if the exact element cannot be found.
- *     Defaults to 'binarySearch.GREATEST_LOWER_BOUND'.
- */
-exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
-  if (aHaystack.length === 0) {
-    return -1;
-  }
+var isArray = __webpack_require__(563);
 
-  var index = recursiveSearch(-1, aHaystack.length, aNeedle, aHaystack,
-                              aCompare, aBias || exports.GREATEST_LOWER_BOUND);
-  if (index < 0) {
-    return -1;
-  }
-
-  // We have found either the exact element, or the next-closest element than
-  // the one we are searching for. However, there may be more than one such
-  // element. Make sure we always return the smallest of these.
-  while (index - 1 >= 0) {
-    if (aCompare(aHaystack[index], aHaystack[index - 1], true) !== 0) {
-      break;
-    }
-    --index;
-  }
-
-  return index;
+module.exports = function isObject(val) {
+  return val != null && typeof val === 'object' && isArray(val) === false;
 };
 
 
 /***/ }),
-/* 200 */,
+/* 200 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var typeOf = __webpack_require__(525);
+var utils = module.exports;
+
+/**
+ * Returns true if the given value is a node.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var node = new Node({type: 'foo'});
+ * console.log(utils.isNode(node)); //=> true
+ * console.log(utils.isNode({})); //=> false
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @returns {Boolean}
+ * @api public
+ */
+
+utils.isNode = function(node) {
+  return typeOf(node) === 'object' && node.isNode === true;
+};
+
+/**
+ * Emit an empty string for the given `node`.
+ *
+ * ```js
+ * // do nothing for beginning-of-string
+ * snapdragon.compiler.set('bos', utils.noop);
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @returns {undefined}
+ * @api public
+ */
+
+utils.noop = function(node) {
+  append(this, '', node);
+};
+
+/**
+ * Appdend `node.val` to `compiler.output`, exactly as it was created
+ * by the parser.
+ *
+ * ```js
+ * snapdragon.compiler.set('text', utils.identity);
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @returns {undefined}
+ * @api public
+ */
+
+utils.identity = function(node) {
+  append(this, node.val, node);
+};
+
+/**
+ * Previously named `.emit`, this method appends the given `val`
+ * to `compiler.output` for the given node. Useful when you know
+ * what value should be appended advance, regardless of the actual
+ * value of `node.val`.
+ *
+ * ```js
+ * snapdragon.compiler
+ *   .set('i', function(node) {
+ *     this.mapVisit(node);
+ *   })
+ *   .set('i.open', utils.append('<i>'))
+ *   .set('i.close', utils.append('</i>'))
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @returns {Function} Returns a compiler middleware function.
+ * @api public
+ */
+
+utils.append = function(val) {
+  return function(node) {
+    append(this, val, node);
+  };
+};
+
+/**
+ * Used in compiler middleware, this onverts an AST node into
+ * an empty `text` node and deletes `node.nodes` if it exists.
+ * The advantage of this method is that, as opposed to completely
+ * removing the node, indices will not need to be re-calculated
+ * in sibling nodes, and nothing is appended to the output.
+ *
+ * ```js
+ * utils.toNoop(node);
+ * // convert `node.nodes` to the given value instead of deleting it
+ * utils.toNoop(node, []);
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Array} `nodes` Optionally pass a new `nodes` value, to replace the existing `node.nodes` array.
+ * @api public
+ */
+
+utils.toNoop = function(node, nodes) {
+  if (nodes) {
+    node.nodes = nodes;
+  } else {
+    delete node.nodes;
+    node.type = 'text';
+    node.val = '';
+  }
+};
+
+/**
+ * Visit `node` with the given `fn`. The built-in `.visit` method in snapdragon
+ * automatically calls registered compilers, this allows you to pass a visitor
+ * function.
+ *
+ * ```js
+ * snapdragon.compiler.set('i', function(node) {
+ *   utils.visit(node, function(childNode) {
+ *     // do stuff with "childNode"
+ *     return childNode;
+ *   });
+ * });
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Function} `fn`
+ * @return {Object} returns the node after recursively visiting all child nodes.
+ * @api public
+ */
+
+utils.visit = function(node, fn) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isFunction(fn), 'expected a visitor function');
+  fn(node);
+  return node.nodes ? utils.mapVisit(node, fn) : node;
+};
+
+/**
+ * Map [visit](#visit) the given `fn` over `node.nodes`. This is called by
+ * [visit](#visit), use this method if you do not want `fn` to be called on
+ * the first node.
+ *
+ * ```js
+ * snapdragon.compiler.set('i', function(node) {
+ *   utils.mapVisit(node, function(childNode) {
+ *     // do stuff with "childNode"
+ *     return childNode;
+ *   });
+ * });
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Object} `options`
+ * @param {Function} `fn`
+ * @return {Object} returns the node
+ * @api public
+ */
+
+utils.mapVisit = function(node, fn) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isArray(node.nodes), 'expected node.nodes to be an array');
+  assert(isFunction(fn), 'expected a visitor function');
+
+  for (var i = 0; i < node.nodes.length; i++) {
+    utils.visit(node.nodes[i], fn);
+  }
+  return node;
+};
+
+/**
+ * Unshift an `*.open` node onto `node.nodes`.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * snapdragon.parser.set('brace', function(node) {
+ *   var match = this.match(/^{/);
+ *   if (match) {
+ *     var parent = new Node({type: 'brace'});
+ *     utils.addOpen(parent, Node);
+ *     console.log(parent.nodes[0]):
+ *     // { type: 'brace.open', val: '' };
+ *
+ *     // push the parent "brace" node onto the stack
+ *     this.push(parent);
+ *
+ *     // return the parent node, so it's also added to the AST
+ *     return brace;
+ *   }
+ * });
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
+ * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
+ * @return {Object} Returns the created opening node.
+ * @api public
+ */
+
+utils.addOpen = function(node, Node, val, filter) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isFunction(Node), 'expected Node to be a constructor function');
+
+  if (typeof val === 'function') {
+    filter = val;
+    val = '';
+  }
+
+  if (typeof filter === 'function' && !filter(node)) return;
+  var open = new Node({ type: node.type + '.open', val: val});
+  var unshift = node.unshift || node.unshiftNode;
+  if (typeof unshift === 'function') {
+    unshift.call(node, open);
+  } else {
+    utils.unshiftNode(node, open);
+  }
+  return open;
+};
+
+/**
+ * Push a `*.close` node onto `node.nodes`.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * snapdragon.parser.set('brace', function(node) {
+ *   var match = this.match(/^}/);
+ *   if (match) {
+ *     var parent = this.parent();
+ *     if (parent.type !== 'brace') {
+ *       throw new Error('missing opening: ' + '}');
+ *     }
+ *
+ *     utils.addClose(parent, Node);
+ *     console.log(parent.nodes[parent.nodes.length - 1]):
+ *     // { type: 'brace.close', val: '' };
+ *
+ *     // no need to return a node, since the parent
+ *     // was already added to the AST
+ *     return;
+ *   }
+ * });
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
+ * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
+ * @return {Object} Returns the created closing node.
+ * @api public
+ */
+
+utils.addClose = function(node, Node, val, filter) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isFunction(Node), 'expected Node to be a constructor function');
+
+  if (typeof val === 'function') {
+    filter = val;
+    val = '';
+  }
+
+  if (typeof filter === 'function' && !filter(node)) return;
+  var close = new Node({ type: node.type + '.close', val: val});
+  var push = node.push || node.pushNode;
+  if (typeof push === 'function') {
+    push.call(node, close);
+  } else {
+    utils.pushNode(node, close);
+  }
+  return close;
+};
+
+/**
+ * Wraps the given `node` with `*.open` and `*.close` nodes.
+ *
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Function} `Node` (required) Node constructor function from [snapdragon-node][].
+ * @param {Function} `filter` Optionaly specify a filter function to exclude the node.
+ * @return {Object} Returns the node
+ * @api public
+ */
+
+utils.wrapNodes = function(node, Node, filter) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isFunction(Node), 'expected Node to be a constructor function');
+
+  utils.addOpen(node, Node, filter);
+  utils.addClose(node, Node, filter);
+  return node;
+};
+
+/**
+ * Push the given `node` onto `parent.nodes`, and set `parent` as `node.parent.
+ *
+ * ```js
+ * var parent = new Node({type: 'foo'});
+ * var node = new Node({type: 'bar'});
+ * utils.pushNode(parent, node);
+ * console.log(parent.nodes[0].type) // 'bar'
+ * console.log(node.parent.type) // 'foo'
+ * ```
+ * @param {Object} `parent`
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Object} Returns the child node
+ * @api public
+ */
+
+utils.pushNode = function(parent, node) {
+  assert(utils.isNode(parent), 'expected parent node to be an instance of Node');
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+
+  node.define('parent', parent);
+  parent.nodes = parent.nodes || [];
+  parent.nodes.push(node);
+  return node;
+};
+
+/**
+ * Unshift `node` onto `parent.nodes`, and set `parent` as `node.parent.
+ *
+ * ```js
+ * var parent = new Node({type: 'foo'});
+ * var node = new Node({type: 'bar'});
+ * utils.unshiftNode(parent, node);
+ * console.log(parent.nodes[0].type) // 'bar'
+ * console.log(node.parent.type) // 'foo'
+ * ```
+ * @param {Object} `parent`
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {undefined}
+ * @api public
+ */
+
+utils.unshiftNode = function(parent, node) {
+  assert(utils.isNode(parent), 'expected parent node to be an instance of Node');
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+
+  node.define('parent', parent);
+  parent.nodes = parent.nodes || [];
+  parent.nodes.unshift(node);
+};
+
+/**
+ * Pop the last `node` off of `parent.nodes`. The advantage of
+ * using this method is that it checks for `node.nodes` and works
+ * with any version of `snapdragon-node`.
+ *
+ * ```js
+ * var parent = new Node({type: 'foo'});
+ * utils.pushNode(parent, new Node({type: 'foo'}));
+ * utils.pushNode(parent, new Node({type: 'bar'}));
+ * utils.pushNode(parent, new Node({type: 'baz'}));
+ * console.log(parent.nodes.length); //=> 3
+ * utils.popNode(parent);
+ * console.log(parent.nodes.length); //=> 2
+ * ```
+ * @param {Object} `parent`
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Number|Undefined} Returns the length of `node.nodes` or undefined.
+ * @api public
+ */
+
+utils.popNode = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  if (typeof node.pop === 'function') {
+    return node.pop();
+  }
+  return node.nodes && node.nodes.pop();
+};
+
+/**
+ * Shift the first `node` off of `parent.nodes`. The advantage of
+ * using this method is that it checks for `node.nodes` and works
+ * with any version of `snapdragon-node`.
+ *
+ * ```js
+ * var parent = new Node({type: 'foo'});
+ * utils.pushNode(parent, new Node({type: 'foo'}));
+ * utils.pushNode(parent, new Node({type: 'bar'}));
+ * utils.pushNode(parent, new Node({type: 'baz'}));
+ * console.log(parent.nodes.length); //=> 3
+ * utils.shiftNode(parent);
+ * console.log(parent.nodes.length); //=> 2
+ * ```
+ * @param {Object} `parent`
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Number|Undefined} Returns the length of `node.nodes` or undefined.
+ * @api public
+ */
+
+utils.shiftNode = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  if (typeof node.shift === 'function') {
+    return node.shift();
+  }
+  return node.nodes && node.nodes.shift();
+};
+
+/**
+ * Remove the specified `node` from `parent.nodes`.
+ *
+ * ```js
+ * var parent = new Node({type: 'abc'});
+ * var foo = new Node({type: 'foo'});
+ * utils.pushNode(parent, foo);
+ * utils.pushNode(parent, new Node({type: 'bar'}));
+ * utils.pushNode(parent, new Node({type: 'baz'}));
+ * console.log(parent.nodes.length); //=> 3
+ * utils.removeNode(parent, foo);
+ * console.log(parent.nodes.length); //=> 2
+ * ```
+ * @param {Object} `parent`
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Object|undefined} Returns the removed node, if successful, or undefined if it does not exist on `parent.nodes`.
+ * @api public
+ */
+
+utils.removeNode = function(parent, node) {
+  assert(utils.isNode(parent), 'expected parent.node to be an instance of Node');
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+
+  if (!parent.nodes) {
+    return null;
+  }
+
+  if (typeof parent.remove === 'function') {
+    return parent.remove(node);
+  }
+
+  var idx = parent.nodes.indexOf(node);
+  if (idx !== -1) {
+    return parent.nodes.splice(idx, 1);
+  }
+};
+
+/**
+ * Returns true if `node.type` matches the given `type`. Throws a
+ * `TypeError` if `node` is not an instance of `Node`.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var node = new Node({type: 'foo'});
+ * console.log(utils.isType(node, 'foo')); // false
+ * console.log(utils.isType(node, 'bar')); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {String} `type`
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isType = function(node, type) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  switch (typeOf(type)) {
+    case 'array':
+      var types = type.slice();
+      for (var i = 0; i < types.length; i++) {
+        if (utils.isType(node, types[i])) {
+          return true;
+        }
+      }
+      return false;
+    case 'string':
+      return node.type === type;
+    case 'regexp':
+      return type.test(node.type);
+    default: {
+      throw new TypeError('expected "type" to be an array, string or regexp');
+    }
+  }
+};
+
+/**
+ * Returns true if the given `node` has the given `type` in `node.nodes`.
+ * Throws a `TypeError` if `node` is not an instance of `Node`.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var node = new Node({
+ *   type: 'foo',
+ *   nodes: [
+ *     new Node({type: 'bar'}),
+ *     new Node({type: 'baz'})
+ *   ]
+ * });
+ * console.log(utils.hasType(node, 'xyz')); // false
+ * console.log(utils.hasType(node, 'baz')); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {String} `type`
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.hasType = function(node, type) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  if (!Array.isArray(node.nodes)) return false;
+  for (var i = 0; i < node.nodes.length; i++) {
+    if (utils.isType(node.nodes[i], type)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Returns the first node from `node.nodes` of the given `type`
+ *
+ * ```js
+ * var node = new Node({
+ *   type: 'foo',
+ *   nodes: [
+ *     new Node({type: 'text', val: 'abc'}),
+ *     new Node({type: 'text', val: 'xyz'})
+ *   ]
+ * });
+ *
+ * var textNode = utils.firstOfType(node.nodes, 'text');
+ * console.log(textNode.val);
+ * //=> 'abc'
+ * ```
+ * @param {Array} `nodes`
+ * @param {String} `type`
+ * @return {Object|undefined} Returns the first matching node or undefined.
+ * @api public
+ */
+
+utils.firstOfType = function(nodes, type) {
+  for (var i = 0; i < nodes.length; i++) {
+    var node = nodes[i];
+    if (utils.isType(node, type)) {
+      return node;
+    }
+  }
+};
+
+/**
+ * Returns the node at the specified index, or the first node of the
+ * given `type` from `node.nodes`.
+ *
+ * ```js
+ * var node = new Node({
+ *   type: 'foo',
+ *   nodes: [
+ *     new Node({type: 'text', val: 'abc'}),
+ *     new Node({type: 'text', val: 'xyz'})
+ *   ]
+ * });
+ *
+ * var nodeOne = utils.findNode(node.nodes, 'text');
+ * console.log(nodeOne.val);
+ * //=> 'abc'
+ *
+ * var nodeTwo = utils.findNode(node.nodes, 1);
+ * console.log(nodeTwo.val);
+ * //=> 'xyz'
+ * ```
+ *
+ * @param {Array} `nodes`
+ * @param {String|Number} `type` Node type or index.
+ * @return {Object} Returns a node or undefined.
+ * @api public
+ */
+
+utils.findNode = function(nodes, type) {
+  if (!Array.isArray(nodes)) {
+    return null;
+  }
+  if (typeof type === 'number') {
+    return nodes[type];
+  }
+  return utils.firstOfType(nodes, type);
+};
+
+/**
+ * Returns true if the given node is an "*.open" node.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var brace = new Node({type: 'brace'});
+ * var open = new Node({type: 'brace.open'});
+ * var close = new Node({type: 'brace.close'});
+ *
+ * console.log(utils.isOpen(brace)); // false
+ * console.log(utils.isOpen(open)); // true
+ * console.log(utils.isOpen(close)); // false
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isOpen = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  return node.type.slice(-5) === '.open';
+};
+
+/**
+ * Returns true if the given node is a "*.close" node.
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var brace = new Node({type: 'brace'});
+ * var open = new Node({type: 'brace.open'});
+ * var close = new Node({type: 'brace.close'});
+ *
+ * console.log(utils.isClose(brace)); // false
+ * console.log(utils.isClose(open)); // false
+ * console.log(utils.isClose(close)); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isClose = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  return node.type.slice(-6) === '.close';
+};
+
+/**
+ * Returns true if `node.nodes` **has** an `.open` node
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var brace = new Node({
+ *   type: 'brace',
+ *   nodes: []
+ * });
+ *
+ * var open = new Node({type: 'brace.open'});
+ * console.log(utils.hasOpen(brace)); // false
+ *
+ * brace.pushNode(open);
+ * console.log(utils.hasOpen(brace)); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.hasOpen = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  var first = node.first || node.nodes ? node.nodes[0] : null;
+  if (utils.isNode(first)) {
+    return first.type === node.type + '.open';
+  }
+  return false;
+};
+
+/**
+ * Returns true if `node.nodes` **has** a `.close` node
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var brace = new Node({
+ *   type: 'brace',
+ *   nodes: []
+ * });
+ *
+ * var close = new Node({type: 'brace.close'});
+ * console.log(utils.hasClose(brace)); // false
+ *
+ * brace.pushNode(close);
+ * console.log(utils.hasClose(brace)); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.hasClose = function(node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  var last = node.last || node.nodes ? node.nodes[node.nodes.length - 1] : null;
+  if (utils.isNode(last)) {
+    return last.type === node.type + '.close';
+  }
+  return false;
+};
+
+/**
+ * Returns true if `node.nodes` has both `.open` and `.close` nodes
+ *
+ * ```js
+ * var Node = require('snapdragon-node');
+ * var brace = new Node({
+ *   type: 'brace',
+ *   nodes: []
+ * });
+ *
+ * var open = new Node({type: 'brace.open'});
+ * var close = new Node({type: 'brace.close'});
+ * console.log(utils.hasOpen(brace)); // false
+ * console.log(utils.hasClose(brace)); // false
+ *
+ * brace.pushNode(open);
+ * brace.pushNode(close);
+ * console.log(utils.hasOpen(brace)); // true
+ * console.log(utils.hasClose(brace)); // true
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.hasOpenAndClose = function(node) {
+  return utils.hasOpen(node) && utils.hasClose(node);
+};
+
+/**
+ * Push the given `node` onto the `state.inside` array for the
+ * given type. This array is used as a specialized "stack" for
+ * only the given `node.type`.
+ *
+ * ```js
+ * var state = { inside: {}};
+ * var node = new Node({type: 'brace'});
+ * utils.addType(state, node);
+ * console.log(state.inside);
+ * //=> { brace: [{type: 'brace'}] }
+ * ```
+ * @param {Object} `state` The `compiler.state` object or custom state object.
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Array} Returns the `state.inside` stack for the given type.
+ * @api public
+ */
+
+utils.addType = function(state, node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isObject(state), 'expected state to be an object');
+
+  var type = node.parent
+    ? node.parent.type
+    : node.type.replace(/\.open$/, '');
+
+  if (!state.hasOwnProperty('inside')) {
+    state.inside = {};
+  }
+  if (!state.inside.hasOwnProperty(type)) {
+    state.inside[type] = [];
+  }
+
+  var arr = state.inside[type];
+  arr.push(node);
+  return arr;
+};
+
+/**
+ * Remove the given `node` from the `state.inside` array for the
+ * given type. This array is used as a specialized "stack" for
+ * only the given `node.type`.
+ *
+ * ```js
+ * var state = { inside: {}};
+ * var node = new Node({type: 'brace'});
+ * utils.addType(state, node);
+ * console.log(state.inside);
+ * //=> { brace: [{type: 'brace'}] }
+ * utils.removeType(state, node);
+ * //=> { brace: [] }
+ * ```
+ * @param {Object} `state` The `compiler.state` object or custom state object.
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @return {Array} Returns the `state.inside` stack for the given type.
+ * @api public
+ */
+
+utils.removeType = function(state, node) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isObject(state), 'expected state to be an object');
+
+  var type = node.parent
+    ? node.parent.type
+    : node.type.replace(/\.close$/, '');
+
+  if (state.inside.hasOwnProperty(type)) {
+    return state.inside[type].pop();
+  }
+};
+
+/**
+ * Returns true if `node.val` is an empty string, or `node.nodes` does
+ * not contain any non-empty text nodes.
+ *
+ * ```js
+ * var node = new Node({type: 'text'});
+ * utils.isEmpty(node); //=> true
+ * node.val = 'foo';
+ * utils.isEmpty(node); //=> false
+ * ```
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {Function} `fn`
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isEmpty = function(node, fn) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+
+  if (!Array.isArray(node.nodes)) {
+    if (node.type !== 'text') {
+      return true;
+    }
+    if (typeof fn === 'function') {
+      return fn(node, node.parent);
+    }
+    return !utils.trim(node.val);
+  }
+
+  for (var i = 0; i < node.nodes.length; i++) {
+    var child = node.nodes[i];
+    if (utils.isOpen(child) || utils.isClose(child)) {
+      continue;
+    }
+    if (!utils.isEmpty(child, fn)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Returns true if the `state.inside` stack for the given type exists
+ * and has one or more nodes on it.
+ *
+ * ```js
+ * var state = { inside: {}};
+ * var node = new Node({type: 'brace'});
+ * console.log(utils.isInsideType(state, 'brace')); //=> false
+ * utils.addType(state, node);
+ * console.log(utils.isInsideType(state, 'brace')); //=> true
+ * utils.removeType(state, node);
+ * console.log(utils.isInsideType(state, 'brace')); //=> false
+ * ```
+ * @param {Object} `state`
+ * @param {String} `type`
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isInsideType = function(state, type) {
+  assert(isObject(state), 'expected state to be an object');
+  assert(isString(type), 'expected type to be a string');
+
+  if (!state.hasOwnProperty('inside')) {
+    return false;
+  }
+
+  if (!state.inside.hasOwnProperty(type)) {
+    return false;
+  }
+
+  return state.inside[type].length > 0;
+};
+
+/**
+ * Returns true if `node` is either a child or grand-child of the given `type`,
+ * or `state.inside[type]` is a non-empty array.
+ *
+ * ```js
+ * var state = { inside: {}};
+ * var node = new Node({type: 'brace'});
+ * var open = new Node({type: 'brace.open'});
+ * console.log(utils.isInside(state, open, 'brace')); //=> false
+ * utils.pushNode(node, open);
+ * console.log(utils.isInside(state, open, 'brace')); //=> true
+ * ```
+ * @param {Object} `state` Either the `compiler.state` object, if it exists, or a user-supplied state object.
+ * @param {Object} `node` Instance of [snapdragon-node][]
+ * @param {String} `type` The `node.type` to check for.
+ * @return {Boolean}
+ * @api public
+ */
+
+utils.isInside = function(state, node, type) {
+  assert(utils.isNode(node), 'expected node to be an instance of Node');
+  assert(isObject(state), 'expected state to be an object');
+
+  if (Array.isArray(type)) {
+    for (var i = 0; i < type.length; i++) {
+      if (utils.isInside(state, node, type[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  var parent = node.parent;
+  if (typeof type === 'string') {
+    return (parent && parent.type === type) || utils.isInsideType(state, type);
+  }
+
+  if (typeOf(type) === 'regexp') {
+    if (parent && parent.type && type.test(parent.type)) {
+      return true;
+    }
+
+    var keys = Object.keys(state.inside);
+    var len = keys.length;
+    var idx = -1;
+    while (++idx < len) {
+      var key = keys[idx];
+      var val = state.inside[key];
+
+      if (Array.isArray(val) && val.length !== 0 && type.test(key)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+/**
+ * Get the last `n` element from the given `array`. Used for getting
+ * a node from `node.nodes.`
+ *
+ * @param {Array} `array`
+ * @param {Number} `n`
+ * @return {undefined}
+ * @api public
+ */
+
+utils.last = function(arr, n) {
+  return arr[arr.length - (n || 1)];
+};
+
+/**
+ * Cast the given `val` to an array.
+ *
+ * ```js
+ * console.log(utils.arrayify(''));
+ * //=> []
+ * console.log(utils.arrayify('foo'));
+ * //=> ['foo']
+ * console.log(utils.arrayify(['foo']));
+ * //=> ['foo']
+ * ```
+ * @param {any} `val`
+ * @return {Array}
+ * @api public
+ */
+
+utils.arrayify = function(val) {
+  if (typeof val === 'string' && val !== '') {
+    return [val];
+  }
+  if (!Array.isArray(val)) {
+    return [];
+  }
+  return val;
+};
+
+/**
+ * Convert the given `val` to a string by joining with `,`. Useful
+ * for creating a cheerio/CSS/DOM-style selector from a list of strings.
+ *
+ * @param {any} `val`
+ * @return {Array}
+ * @api public
+ */
+
+utils.stringify = function(val) {
+  return utils.arrayify(val).join(',');
+};
+
+/**
+ * Ensure that the given value is a string and call `.trim()` on it,
+ * or return an empty string.
+ *
+ * @param {String} `str`
+ * @return {String}
+ * @api public
+ */
+
+utils.trim = function(str) {
+  return typeof str === 'string' ? str.trim() : '';
+};
+
+/**
+ * Return true if val is an object
+ */
+
+function isObject(val) {
+  return typeOf(val) === 'object';
+}
+
+/**
+ * Return true if val is a string
+ */
+
+function isString(val) {
+  return typeof val === 'string';
+}
+
+/**
+ * Return true if val is a function
+ */
+
+function isFunction(val) {
+  return typeof val === 'function';
+}
+
+/**
+ * Return true if val is an array
+ */
+
+function isArray(val) {
+  return Array.isArray(val);
+}
+
+/**
+ * Shim to ensure the `.append` methods work with any version of snapdragon
+ */
+
+function append(compiler, val, node) {
+  if (typeof compiler.append !== 'function') {
+    return compiler.emit(val, node);
+  }
+  return compiler.append(val, node);
+}
+
+/**
+ * Simplified assertion. Throws an error is `val` is falsey.
+ */
+
+function assert(val, message) {
+  if (!val) throw new Error(message);
+}
+
+
+/***/ }),
 /* 201 */,
 /* 202 */,
 /* 203 */,
@@ -13379,7 +13620,7 @@ utils.extend = __webpack_require__(420);
 utils.flatten = __webpack_require__(244);
 utils.isObject = __webpack_require__(259);
 utils.fillRange = __webpack_require__(730);
-utils.repeat = __webpack_require__(886);
+utils.repeat = __webpack_require__(31);
 utils.unique = __webpack_require__(305);
 
 utils.define = function(obj, key, val) {
@@ -14601,7 +14842,25 @@ var _default = md5;
 exports.default = _default;
 
 /***/ }),
-/* 246 */,
+/* 246 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var colors = __webpack_require__(882);
+
+module.exports = (function () {
+  var rainbowColors = ['red', 'yellow', 'green', 'blue', 'magenta']; //RoY G BiV
+  return function (letter, i, exploded) {
+    if (letter === " ") {
+      return letter;
+    } else {
+      return colors[rainbowColors[i++ % rainbowColors.length]](letter);
+    }
+  };
+})();
+
+
+
+/***/ }),
 /* 247 */,
 /* 248 */,
 /* 249 */,
@@ -16170,22 +16429,59 @@ function processEmit (ev, arg) {
 /***/ }),
 /* 261 */,
 /* 262 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
-const is = __webpack_require__(534);
-
-module.exports = function deepFreeze(object) {
-	for (const [key, value] of Object.entries(object)) {
-		if (is.plainObject(value) || is.array(value)) {
-			deepFreeze(object[key]);
-		}
-	}
-
-	return Object.freeze(object);
-};
-
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Context = void 0;
+const fs_1 = __webpack_require__(747);
+const os_1 = __webpack_require__(87);
+class Context {
+    /**
+     * Hydrate the context from the environment
+     */
+    constructor() {
+        this.payload = {};
+        if (process.env.GITHUB_EVENT_PATH) {
+            if (fs_1.existsSync(process.env.GITHUB_EVENT_PATH)) {
+                this.payload = JSON.parse(fs_1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
+            }
+            else {
+                const path = process.env.GITHUB_EVENT_PATH;
+                process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`);
+            }
+        }
+        this.eventName = process.env.GITHUB_EVENT_NAME;
+        this.sha = process.env.GITHUB_SHA;
+        this.ref = process.env.GITHUB_REF;
+        this.workflow = process.env.GITHUB_WORKFLOW;
+        this.action = process.env.GITHUB_ACTION;
+        this.actor = process.env.GITHUB_ACTOR;
+        this.job = process.env.GITHUB_JOB;
+        this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
+        this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
+    }
+    get issue() {
+        const payload = this.payload;
+        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
+    }
+    get repo() {
+        if (process.env.GITHUB_REPOSITORY) {
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            return { owner, repo };
+        }
+        if (this.payload.repository) {
+            return {
+                owner: this.payload.repository.owner.login,
+                repo: this.payload.repository.name
+            };
+        }
+        throw new Error("context.repo requires a GITHUB_REPOSITORY environment variable like 'owner/repo'");
+    }
+}
+exports.Context = Context;
+//# sourceMappingURL=context.js.map
 
 /***/ }),
 /* 263 */
@@ -17066,7 +17362,23 @@ function diffArray(one, two) {
 
 
 /***/ }),
-/* 267 */,
+/* 267 */
+/***/ (function(module) {
+
+/* eslint-disable node/no-deprecated-api */
+module.exports = function (size) {
+  if (typeof Buffer.allocUnsafe === 'function') {
+    try {
+      return Buffer.allocUnsafe(size)
+    } catch (e) {
+      return new Buffer(size)
+    }
+  }
+  return new Buffer(size)
+}
+
+
+/***/ }),
 /* 268 */,
 /* 269 */,
 /* 270 */,
@@ -18965,7 +19277,7 @@ exports.create = create;
 
 const os = __webpack_require__(87);
 const macosRelease = __webpack_require__(118);
-const winRelease = __webpack_require__(49);
+const winRelease = __webpack_require__(494);
 
 const osName = (platform, release) => {
 	if (!platform && release) {
@@ -19791,7 +20103,143 @@ var _default = v3;
 exports.default = _default;
 
 /***/ }),
-/* 299 */,
+/* 299 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const VERSION = "2.4.0";
+
+/**
+ * Some “list” response that can be paginated have a different response structure
+ *
+ * They have a `total_count` key in the response (search also has `incomplete_results`,
+ * /installation/repositories also has `repository_selection`), as well as a key with
+ * the list of the items which name varies from endpoint to endpoint.
+ *
+ * Octokit normalizes these responses so that paginated results are always returned following
+ * the same structure. One challenge is that if the list response has only one page, no Link
+ * header is provided, so this header alone is not sufficient to check wether a response is
+ * paginated or not.
+ *
+ * We check if a "total_count" key is present in the response data, but also make sure that
+ * a "url" property is not, as the "Get the combined status for a specific ref" endpoint would
+ * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+ */
+function normalizePaginatedListResponse(response) {
+  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
+  if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
+  // to retrieve the same information.
+
+  const incompleteResults = response.data.incomplete_results;
+  const repositorySelection = response.data.repository_selection;
+  const totalCount = response.data.total_count;
+  delete response.data.incomplete_results;
+  delete response.data.repository_selection;
+  delete response.data.total_count;
+  const namespaceKey = Object.keys(response.data)[0];
+  const data = response.data[namespaceKey];
+  response.data = data;
+
+  if (typeof incompleteResults !== "undefined") {
+    response.data.incomplete_results = incompleteResults;
+  }
+
+  if (typeof repositorySelection !== "undefined") {
+    response.data.repository_selection = repositorySelection;
+  }
+
+  response.data.total_count = totalCount;
+  return response;
+}
+
+function iterator(octokit, route, parameters) {
+  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
+  const requestMethod = typeof route === "function" ? route : octokit.request;
+  const method = options.method;
+  const headers = options.headers;
+  let url = options.url;
+  return {
+    [Symbol.asyncIterator]: () => ({
+      next() {
+        if (!url) {
+          return Promise.resolve({
+            done: true
+          });
+        }
+
+        return requestMethod({
+          method,
+          url,
+          headers
+        }).then(normalizePaginatedListResponse).then(response => {
+          // `response.headers.link` format:
+          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
+          // sets `url` to undefined if "next" URL is not present or `link` header is not set
+          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          return {
+            value: response
+          };
+        });
+      }
+
+    })
+  };
+}
+
+function paginate(octokit, route, parameters, mapFn) {
+  if (typeof parameters === "function") {
+    mapFn = parameters;
+    parameters = undefined;
+  }
+
+  return gather(octokit, [], iterator(octokit, route, parameters)[Symbol.asyncIterator](), mapFn);
+}
+
+function gather(octokit, results, iterator, mapFn) {
+  return iterator.next().then(result => {
+    if (result.done) {
+      return results;
+    }
+
+    let earlyExit = false;
+
+    function done() {
+      earlyExit = true;
+    }
+
+    results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
+
+    if (earlyExit) {
+      return results;
+    }
+
+    return gather(octokit, results, iterator, mapFn);
+  });
+}
+
+/**
+ * @param octokit Octokit instance
+ * @param options Options passed to Octokit constructor
+ */
+
+function paginateRest(octokit) {
+  return {
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
+    })
+  };
+}
+paginateRest.VERSION = VERSION;
+
+exports.paginateRest = paginateRest;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 300 */,
 /* 301 */,
 /* 302 */
@@ -20592,7 +21040,16 @@ module.exports = {
 
 /***/ }),
 /* 314 */,
-/* 315 */,
+/* 315 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var colors = __webpack_require__(882);
+
+module.exports = function (letter, i, exploded) {
+  return i % 2 === 0 ? letter : colors.inverse(letter);
+};
+
+/***/ }),
 /* 316 */,
 /* 317 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -20980,7 +21437,64 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 /***/ }),
 /* 329 */,
-/* 330 */,
+/* 330 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const {PassThrough} = __webpack_require__(794);
+
+module.exports = options => {
+	options = Object.assign({}, options);
+
+	const {array} = options;
+	let {encoding} = options;
+	const buffer = encoding === 'buffer';
+	let objectMode = false;
+
+	if (array) {
+		objectMode = !(encoding || buffer);
+	} else {
+		encoding = encoding || 'utf8';
+	}
+
+	if (buffer) {
+		encoding = null;
+	}
+
+	let len = 0;
+	const ret = [];
+	const stream = new PassThrough({objectMode});
+
+	if (encoding) {
+		stream.setEncoding(encoding);
+	}
+
+	stream.on('data', chunk => {
+		ret.push(chunk);
+
+		if (objectMode) {
+			len = ret.length;
+		} else {
+			len += chunk.length;
+		}
+	});
+
+	stream.getBufferedValue = () => {
+		if (array) {
+			return ret;
+		}
+
+		return buffer ? Buffer.concat(ret, len) : ret.join('');
+	};
+
+	stream.getBufferedLength = () => len;
+
+	return stream;
+};
+
+
+/***/ }),
 /* 331 */,
 /* 332 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -21453,7 +21967,88 @@ module.exports.MaxBufferError = MaxBufferError;
 
 
 /***/ }),
-/* 342 */,
+/* 342 */
+/***/ (function(module) {
+
+/*
+The MIT License (MIT)
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var styles = {};
+module.exports = styles;
+
+var codes = {
+  reset: [0, 0],
+
+  bold: [1, 22],
+  dim: [2, 22],
+  italic: [3, 23],
+  underline: [4, 24],
+  inverse: [7, 27],
+  hidden: [8, 28],
+  strikethrough: [9, 29],
+
+  black: [30, 39],
+  red: [31, 39],
+  green: [32, 39],
+  yellow: [33, 39],
+  blue: [34, 39],
+  magenta: [35, 39],
+  cyan: [36, 39],
+  white: [37, 39],
+  gray: [90, 39],
+  grey: [90, 39],
+
+  bgBlack: [40, 49],
+  bgRed: [41, 49],
+  bgGreen: [42, 49],
+  bgYellow: [43, 49],
+  bgBlue: [44, 49],
+  bgMagenta: [45, 49],
+  bgCyan: [46, 49],
+  bgWhite: [47, 49],
+
+  // legacy styles for colors pre v1.0.0
+  blackBG: [40, 49],
+  redBG: [41, 49],
+  greenBG: [42, 49],
+  yellowBG: [43, 49],
+  blueBG: [44, 49],
+  magentaBG: [45, 49],
+  cyanBG: [46, 49],
+  whiteBG: [47, 49]
+
+};
+
+Object.keys(codes).forEach(function (key) {
+  var val = codes[key];
+  var style = styles[key] = [];
+  style.open = '\u001b[' + val[0] + 'm';
+  style.close = '\u001b[' + val[1] + 'm';
+});
+
+/***/ }),
 /* 343 */
 /***/ (function(module) {
 
@@ -51149,7 +51744,7 @@ exports.PrefixSecurityEnum = PrefixSecurityEnum;
 
 
 const cp = __webpack_require__(129);
-const parse = __webpack_require__(513);
+const parse = __webpack_require__(893);
 const enoent = __webpack_require__(222);
 
 function spawn(command, args, options) {
@@ -53751,7 +54346,7 @@ exports.NOOP_METER_PROVIDER = new NoopMeterProvider();
 /* 453 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-var once = __webpack_require__(969)
+var once = __webpack_require__(49)
 var eos = __webpack_require__(3)
 var fs = __webpack_require__(747) // we only need fs to get the ReadStream and WriteStream prototypes
 
@@ -56167,170 +56762,45 @@ function legacy (fs) {
 /* 467 */,
 /* 468 */,
 /* 469 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
-const net = __webpack_require__(631);
-
-class TimeoutError extends Error {
-	constructor(threshold, event) {
-		super(`Timeout awaiting '${event}' for ${threshold}ms`);
-		this.name = 'TimeoutError';
-		this.code = 'ETIMEDOUT';
-		this.event = event;
-	}
-}
-
-const reentry = Symbol('reentry');
-
-const noop = () => {};
-
-module.exports = (request, delays, options) => {
-	/* istanbul ignore next: this makes sure timed-out isn't called twice */
-	if (request[reentry]) {
-		return;
-	}
-
-	request[reentry] = true;
-
-	let stopNewTimeouts = false;
-
-	const addTimeout = (delay, callback, ...args) => {
-		// An error had been thrown before. Going further would result in uncaught errors.
-		// See https://github.com/sindresorhus/got/issues/631#issuecomment-435675051
-		if (stopNewTimeouts) {
-			return noop;
-		}
-
-		// Event loop order is timers, poll, immediates.
-		// The timed event may emit during the current tick poll phase, so
-		// defer calling the handler until the poll phase completes.
-		let immediate;
-		const timeout = setTimeout(() => {
-			immediate = setImmediate(callback, delay, ...args);
-			/* istanbul ignore next: added in node v9.7.0 */
-			if (immediate.unref) {
-				immediate.unref();
-			}
-		}, delay);
-
-		/* istanbul ignore next: in order to support electron renderer */
-		if (timeout.unref) {
-			timeout.unref();
-		}
-
-		const cancel = () => {
-			clearTimeout(timeout);
-			clearImmediate(immediate);
-		};
-
-		cancelers.push(cancel);
-
-		return cancel;
-	};
-
-	const {host, hostname} = options;
-	const timeoutHandler = (delay, event) => {
-		request.emit('error', new TimeoutError(delay, event));
-		request.once('error', () => {}); // Ignore the `socket hung up` error made by request.abort()
-
-		request.abort();
-	};
-
-	const cancelers = [];
-	const cancelTimeouts = () => {
-		stopNewTimeouts = true;
-		cancelers.forEach(cancelTimeout => cancelTimeout());
-	};
-
-	request.once('error', cancelTimeouts);
-	request.once('response', response => {
-		response.once('end', cancelTimeouts);
-	});
-
-	if (delays.request !== undefined) {
-		addTimeout(delays.request, timeoutHandler, 'request');
-	}
-
-	if (delays.socket !== undefined) {
-		const socketTimeoutHandler = () => {
-			timeoutHandler(delays.socket, 'socket');
-		};
-
-		request.setTimeout(delays.socket, socketTimeoutHandler);
-
-		// `request.setTimeout(0)` causes a memory leak.
-		// We can just remove the listener and forget about the timer - it's unreffed.
-		// See https://github.com/sindresorhus/got/issues/690
-		cancelers.push(() => request.removeListener('timeout', socketTimeoutHandler));
-	}
-
-	if (delays.lookup !== undefined && !request.socketPath && !net.isIP(hostname || host)) {
-		request.once('socket', socket => {
-			/* istanbul ignore next: hard to test */
-			if (socket.connecting) {
-				const cancelTimeout = addTimeout(delays.lookup, timeoutHandler, 'lookup');
-				socket.once('lookup', cancelTimeout);
-			}
-		});
-	}
-
-	if (delays.connect !== undefined) {
-		request.once('socket', socket => {
-			/* istanbul ignore next: hard to test */
-			if (socket.connecting) {
-				const timeConnect = () => addTimeout(delays.connect, timeoutHandler, 'connect');
-
-				if (request.socketPath || net.isIP(hostname || host)) {
-					socket.once('connect', timeConnect());
-				} else {
-					socket.once('lookup', error => {
-						if (error === null) {
-							socket.once('connect', timeConnect());
-						}
-					});
-				}
-			}
-		});
-	}
-
-	if (delays.secureConnect !== undefined && options.protocol === 'https:') {
-		request.once('socket', socket => {
-			/* istanbul ignore next: hard to test */
-			if (socket.connecting) {
-				socket.once('connect', () => {
-					const cancelTimeout = addTimeout(delays.secureConnect, timeoutHandler, 'secureConnect');
-					socket.once('secureConnect', cancelTimeout);
-				});
-			}
-		});
-	}
-
-	if (delays.send !== undefined) {
-		request.once('socket', socket => {
-			const timeRequest = () => addTimeout(delays.send, timeoutHandler, 'send');
-			/* istanbul ignore next: hard to test */
-			if (socket.connecting) {
-				socket.once('connect', () => {
-					request.once('upload-complete', timeRequest());
-				});
-			} else {
-				request.once('upload-complete', timeRequest());
-			}
-		});
-	}
-
-	if (delays.response !== undefined) {
-		request.once('upload-complete', () => {
-			const cancelTimeout = addTimeout(delays.response, timeoutHandler, 'response');
-			request.once('response', cancelTimeout);
-		});
-	}
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
-
-module.exports.TimeoutError = TimeoutError;
-
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getOctokit = exports.context = void 0;
+const Context = __importStar(__webpack_require__(262));
+const utils_1 = __webpack_require__(521);
+exports.context = new Context.Context();
+/**
+ * Returns a hydrated octokit ready to use for GitHub Actions
+ *
+ * @param     token    the repo PAT or GITHUB_TOKEN
+ * @param     options  other options to set
+ */
+function getOctokit(token, options) {
+    return new utils_1.GitHub(utils_1.getOctokitOptions(token, options));
+}
+exports.getOctokit = getOctokit;
+//# sourceMappingURL=github.js.map
 
 /***/ }),
 /* 470 */
@@ -56585,7 +57055,7 @@ exports.getState = getState;
 
 
 const file = __webpack_require__(149)
-const link = __webpack_require__(900)
+const link = __webpack_require__(522)
 const symlink = __webpack_require__(849)
 
 module.exports = {
@@ -56898,7 +57368,7 @@ module.exports = function isExtendable(val) {
 /* 482 */
 /***/ (function(module) {
 
-module.exports = {"_from":"got","_id":"got@9.6.0","_inBundle":false,"_integrity":"sha512-R7eWptXuGYxwijs0eV+v3o6+XH1IqVK8dJOEecQfTmkncw9AV4dcw/Dhxi8MdlqPthxxpZyizMzyg8RTmEsG+Q==","_location":"/got","_phantomChildren":{"pump":"3.0.0"},"_requested":{"type":"tag","registry":true,"raw":"got","name":"got","escapedName":"got","rawSpec":"","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/got/-/got-9.6.0.tgz","_shasum":"edf45e7d67f99545705de1f7bbeeeb121765ed85","_spec":"got","_where":"/Users/gleb/git/github-action","ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"bundleDependencies":false,"dependencies":{"@sindresorhus/is":"^0.14.0","@szmarczak/http-timer":"^1.1.2","cacheable-request":"^6.0.0","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^4.1.0","lowercase-keys":"^1.0.1","mimic-response":"^1.0.1","p-cancelable":"^1.0.0","to-readable-stream":"^1.0.0","url-parse-lax":"^3.0.0"},"deprecated":false,"description":"Simplified HTTP requests","devDependencies":{"ava":"^1.1.0","coveralls":"^3.0.0","delay":"^4.1.0","form-data":"^2.3.3","get-port":"^4.0.0","np":"^3.1.0","nyc":"^13.1.0","p-event":"^2.1.0","pem":"^1.13.2","proxyquire":"^2.0.1","sinon":"^7.2.2","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","tough-cookie":"^3.0.0","xo":"^0.24.0"},"engines":{"node":">=8.6"},"files":["source"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","main":"source","name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"release":"np","test":"xo && nyc ava"},"version":"9.6.0"};
+module.exports = {"_args":[["got@9.6.0","/Users/johnkahn/Development/github-actions/cypress-github-action"]],"_from":"got@9.6.0","_id":"got@9.6.0","_inBundle":false,"_integrity":"sha512-R7eWptXuGYxwijs0eV+v3o6+XH1IqVK8dJOEecQfTmkncw9AV4dcw/Dhxi8MdlqPthxxpZyizMzyg8RTmEsG+Q==","_location":"/got","_phantomChildren":{"pump":"3.0.0"},"_requested":{"type":"version","registry":true,"raw":"got@9.6.0","name":"got","escapedName":"got","rawSpec":"9.6.0","saveSpec":null,"fetchSpec":"9.6.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/got/-/got-9.6.0.tgz","_spec":"9.6.0","_where":"/Users/johnkahn/Development/github-actions/cypress-github-action","ava":{"concurrency":4},"browser":{"decompress-response":false,"electron":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"dependencies":{"@sindresorhus/is":"^0.14.0","@szmarczak/http-timer":"^1.1.2","cacheable-request":"^6.0.0","decompress-response":"^3.3.0","duplexer3":"^0.1.4","get-stream":"^4.1.0","lowercase-keys":"^1.0.1","mimic-response":"^1.0.1","p-cancelable":"^1.0.0","to-readable-stream":"^1.0.0","url-parse-lax":"^3.0.0"},"description":"Simplified HTTP requests","devDependencies":{"ava":"^1.1.0","coveralls":"^3.0.0","delay":"^4.1.0","form-data":"^2.3.3","get-port":"^4.0.0","np":"^3.1.0","nyc":"^13.1.0","p-event":"^2.1.0","pem":"^1.13.2","proxyquire":"^2.0.1","sinon":"^7.2.2","slow-stream":"0.0.4","tempfile":"^2.0.0","tempy":"^0.2.1","tough-cookie":"^3.0.0","xo":"^0.24.0"},"engines":{"node":">=8.6"},"files":["source"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","main":"source","name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"release":"np","test":"xo && nyc ava"},"version":"9.6.0"};
 
 /***/ }),
 /* 483 */,
@@ -57055,7 +57525,65 @@ exports.ContextAPI = ContextAPI;
 
 /***/ }),
 /* 493 */,
-/* 494 */,
+/* 494 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const os = __webpack_require__(87);
+const execa = __webpack_require__(675);
+
+// Reference: https://www.gaijin.at/en/lstwinver.php
+const names = new Map([
+	['10.0', '10'],
+	['6.3', '8.1'],
+	['6.2', '8'],
+	['6.1', '7'],
+	['6.0', 'Vista'],
+	['5.2', 'Server 2003'],
+	['5.1', 'XP'],
+	['5.0', '2000'],
+	['4.9', 'ME'],
+	['4.1', '98'],
+	['4.0', '95']
+]);
+
+const windowsRelease = release => {
+	const version = /\d+\.\d/.exec(release || os.release());
+
+	if (release && !version) {
+		throw new Error('`release` argument doesn\'t match `n.n`');
+	}
+
+	const ver = (version || [])[0];
+
+	// Server 2008, 2012, 2016, and 2019 versions are ambiguous with desktop versions and must be detected at runtime.
+	// If `release` is omitted or we're on a Windows system, and the version number is an ambiguous version
+	// then use `wmic` to get the OS caption: https://msdn.microsoft.com/en-us/library/aa394531(v=vs.85).aspx
+	// If `wmic` is obsoloete (later versions of Windows 10), use PowerShell instead.
+	// If the resulting caption contains the year 2008, 2012, 2016 or 2019, it is a server version, so return a server OS name.
+	if ((!release || release === os.release()) && ['6.1', '6.2', '6.3', '10.0'].includes(ver)) {
+		let stdout;
+		try {
+			stdout = execa.sync('wmic', ['os', 'get', 'Caption']).stdout || '';
+		} catch (_) {
+			stdout = execa.sync('powershell', ['(Get-CimInstance -ClassName Win32_OperatingSystem).caption']).stdout || '';
+		}
+
+		const year = (stdout.match(/2008|2012|2016|2019/) || [])[0];
+
+		if (year) {
+			return `Server ${year}`;
+		}
+	}
+
+	return names.get(ver);
+};
+
+module.exports = windowsRelease;
+
+
+/***/ }),
 /* 495 */,
 /* 496 */,
 /* 497 */,
@@ -57285,8 +57813,8 @@ module.exports = Braces;
  */
 
 var util = __webpack_require__(290);
-var binarySearch = __webpack_require__(199);
-var ArraySet = __webpack_require__(66).ArraySet;
+var binarySearch = __webpack_require__(887);
+var ArraySet = __webpack_require__(969).ArraySet;
 var base64VLQ = __webpack_require__(277);
 var quickSort = __webpack_require__(832).quickSort;
 
@@ -58384,134 +58912,29 @@ module.exports = {"application/1d-interleaved-parityfec":{"source":"iana"},"appl
 
 /***/ }),
 /* 513 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports) {
 
 "use strict";
 
 
-const path = __webpack_require__(622);
-const niceTry = __webpack_require__(948);
-const resolveCommand = __webpack_require__(416);
-const escape = __webpack_require__(234);
-const readShebang = __webpack_require__(336);
-const semver = __webpack_require__(955);
+Object.defineProperty(exports, '__esModule', { value: true });
 
-const isWin = process.platform === 'win32';
-const isExecutableRegExp = /\.(?:com|exe)$/i;
-const isCmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
+class Deprecation extends Error {
+  constructor(message) {
+    super(message); // Maintains proper stack trace (only available on V8)
 
-// `options.shell` is supported in Node ^4.8.0, ^5.7.0 and >= 6.0.0
-const supportsShellOption = niceTry(() => semver.satisfies(process.version, '^4.8.0 || ^5.7.0 || >= 6.0.0', true)) || false;
+    /* istanbul ignore next */
 
-function detectShebang(parsed) {
-    parsed.file = resolveCommand(parsed);
-
-    const shebang = parsed.file && readShebang(parsed.file);
-
-    if (shebang) {
-        parsed.args.unshift(parsed.file);
-        parsed.command = shebang;
-
-        return resolveCommand(parsed);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
     }
 
-    return parsed.file;
+    this.name = 'Deprecation';
+  }
+
 }
 
-function parseNonShell(parsed) {
-    if (!isWin) {
-        return parsed;
-    }
-
-    // Detect & add support for shebangs
-    const commandFile = detectShebang(parsed);
-
-    // We don't need a shell if the command filename is an executable
-    const needsShell = !isExecutableRegExp.test(commandFile);
-
-    // If a shell is required, use cmd.exe and take care of escaping everything correctly
-    // Note that `forceShell` is an hidden option used only in tests
-    if (parsed.options.forceShell || needsShell) {
-        // Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
-        // The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
-        // Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
-        // we need to double escape them
-        const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile);
-
-        // Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
-        // This is necessary otherwise it will always fail with ENOENT in those cases
-        parsed.command = path.normalize(parsed.command);
-
-        // Escape command & arguments
-        parsed.command = escape.command(parsed.command);
-        parsed.args = parsed.args.map((arg) => escape.argument(arg, needsDoubleEscapeMetaChars));
-
-        const shellCommand = [parsed.command].concat(parsed.args).join(' ');
-
-        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
-        parsed.command = process.env.comspec || 'cmd.exe';
-        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
-    }
-
-    return parsed;
-}
-
-function parseShell(parsed) {
-    // If node supports the shell option, there's no need to mimic its behavior
-    if (supportsShellOption) {
-        return parsed;
-    }
-
-    // Mimic node shell option
-    // See https://github.com/nodejs/node/blob/b9f6a2dc059a1062776133f3d4fd848c4da7d150/lib/child_process.js#L335
-    const shellCommand = [parsed.command].concat(parsed.args).join(' ');
-
-    if (isWin) {
-        parsed.command = typeof parsed.options.shell === 'string' ? parsed.options.shell : process.env.comspec || 'cmd.exe';
-        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
-        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
-    } else {
-        if (typeof parsed.options.shell === 'string') {
-            parsed.command = parsed.options.shell;
-        } else if (process.platform === 'android') {
-            parsed.command = '/system/bin/sh';
-        } else {
-            parsed.command = '/bin/sh';
-        }
-
-        parsed.args = ['-c', shellCommand];
-    }
-
-    return parsed;
-}
-
-function parse(command, args, options) {
-    // Normalize arguments, similar to nodejs
-    if (args && !Array.isArray(args)) {
-        options = args;
-        args = null;
-    }
-
-    args = args ? args.slice(0) : []; // Clone array to avoid changing the original
-    options = Object.assign({}, options); // Clone object to avoid changing the original
-
-    // Build our parsed object
-    const parsed = {
-        command,
-        args,
-        options,
-        file: undefined,
-        original: {
-            command,
-            args,
-        },
-    };
-
-    // Delegate further parsing to shell or non-shell
-    return options.shell ? parseShell(parsed) : parseNonShell(parsed);
-}
-
-module.exports = parse;
+exports.Deprecation = Deprecation;
 
 
 /***/ }),
@@ -58605,8 +59028,134 @@ module.exports = {
 /* 518 */,
 /* 519 */,
 /* 520 */,
-/* 521 */,
-/* 522 */,
+/* 521 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
+const Context = __importStar(__webpack_require__(262));
+const Utils = __importStar(__webpack_require__(127));
+// octokit + plugins
+const core_1 = __webpack_require__(72);
+const plugin_rest_endpoint_methods_1 = __webpack_require__(842);
+const plugin_paginate_rest_1 = __webpack_require__(299);
+exports.context = new Context.Context();
+const baseUrl = Utils.getApiBaseUrl();
+const defaults = {
+    baseUrl,
+    request: {
+        agent: Utils.getProxyAgent(baseUrl)
+    }
+};
+exports.GitHub = core_1.Octokit.plugin(plugin_rest_endpoint_methods_1.restEndpointMethods, plugin_paginate_rest_1.paginateRest).defaults(defaults);
+/**
+ * Convience function to correctly format Octokit Options to pass into the constructor.
+ *
+ * @param     token    the repo PAT or GITHUB_TOKEN
+ * @param     options  other options to set
+ */
+function getOctokitOptions(token, options) {
+    const opts = Object.assign({}, options || {}); // Shallow clone - don't mutate the object provided by the caller
+    // Auth
+    const auth = Utils.getAuthString(token, opts);
+    if (auth) {
+        opts.auth = auth;
+    }
+    return opts;
+}
+exports.getOctokitOptions = getOctokitOptions;
+//# sourceMappingURL=utils.js.map
+
+/***/ }),
+/* 522 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const u = __webpack_require__(147).fromCallback
+const path = __webpack_require__(622)
+const fs = __webpack_require__(598)
+const mkdir = __webpack_require__(63)
+const pathExists = __webpack_require__(322).pathExists
+
+function createLink (srcpath, dstpath, callback) {
+  function makeLink (srcpath, dstpath) {
+    fs.link(srcpath, dstpath, err => {
+      if (err) return callback(err)
+      callback(null)
+    })
+  }
+
+  pathExists(dstpath, (err, destinationExists) => {
+    if (err) return callback(err)
+    if (destinationExists) return callback(null)
+    fs.lstat(srcpath, (err, stat) => {
+      if (err) {
+        err.message = err.message.replace('lstat', 'ensureLink')
+        return callback(err)
+      }
+
+      const dir = path.dirname(dstpath)
+      pathExists(dir, (err, dirExists) => {
+        if (err) return callback(err)
+        if (dirExists) return makeLink(srcpath, dstpath)
+        mkdir.mkdirs(dir, err => {
+          if (err) return callback(err)
+          makeLink(srcpath, dstpath)
+        })
+      })
+    })
+  })
+}
+
+function createLinkSync (srcpath, dstpath, callback) {
+  const destinationExists = fs.existsSync(dstpath)
+  if (destinationExists) return undefined
+
+  try {
+    fs.lstatSync(srcpath)
+  } catch (err) {
+    err.message = err.message.replace('lstat', 'ensureLink')
+    throw err
+  }
+
+  const dir = path.dirname(dstpath)
+  const dirExists = fs.existsSync(dir)
+  if (dirExists) return fs.linkSync(srcpath, dstpath)
+  mkdir.mkdirsSync(dir)
+
+  return fs.linkSync(srcpath, dstpath)
+}
+
+module.exports = {
+  createLink: u(createLink),
+  createLinkSync
+}
+
+
+/***/ }),
 /* 523 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -60836,23 +61385,53 @@ module.exports = Array.isArray || function (arr) {
 /***/ }),
 /* 564 */,
 /* 565 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module) {
 
-"use strict";
-/*!
- * isobject <https://github.com/jonschlinkert/isobject>
- *
- * Copyright (c) 2014-2015, Jon Schlinkert.
- * Licensed under the MIT License.
- */
+module.exports = function runTheTrap (text, options) {
+  var result = "";
+  text = text || "Run the trap, drop the bass";
+  text = text.split('');
+  var trap = {
+    a: ["\u0040", "\u0104", "\u023a", "\u0245", "\u0394", "\u039b", "\u0414"],
+    b: ["\u00df", "\u0181", "\u0243", "\u026e", "\u03b2", "\u0e3f"],
+    c: ["\u00a9", "\u023b", "\u03fe"],
+    d: ["\u00d0", "\u018a", "\u0500" , "\u0501" ,"\u0502", "\u0503"],
+    e: ["\u00cb", "\u0115", "\u018e", "\u0258", "\u03a3", "\u03be", "\u04bc", "\u0a6c"],
+    f: ["\u04fa"],
+    g: ["\u0262"],
+    h: ["\u0126", "\u0195", "\u04a2", "\u04ba", "\u04c7", "\u050a"],
+    i: ["\u0f0f"],
+    j: ["\u0134"],
+    k: ["\u0138", "\u04a0", "\u04c3", "\u051e"],
+    l: ["\u0139"],
+    m: ["\u028d", "\u04cd", "\u04ce", "\u0520", "\u0521", "\u0d69"],
+    n: ["\u00d1", "\u014b", "\u019d", "\u0376", "\u03a0", "\u048a"],
+    o: ["\u00d8", "\u00f5", "\u00f8", "\u01fe", "\u0298", "\u047a", "\u05dd", "\u06dd", "\u0e4f"],
+    p: ["\u01f7", "\u048e"],
+    q: ["\u09cd"],
+    r: ["\u00ae", "\u01a6", "\u0210", "\u024c", "\u0280", "\u042f"],
+    s: ["\u00a7", "\u03de", "\u03df", "\u03e8"],
+    t: ["\u0141", "\u0166", "\u0373"],
+    u: ["\u01b1", "\u054d"],
+    v: ["\u05d8"],
+    w: ["\u0428", "\u0460", "\u047c", "\u0d70"],
+    x: ["\u04b2", "\u04fe", "\u04fc", "\u04fd"],
+    y: ["\u00a5", "\u04b0", "\u04cb"],
+    z: ["\u01b5", "\u0240"]
+  }
+  text.forEach(function(c){
+    c = c.toLowerCase();
+    var chars = trap[c] || [" "];
+    var rand = Math.floor(Math.random() * chars.length);
+    if (typeof trap[c] !== "undefined") {
+      result += trap[c][rand];
+    } else {
+      result += c;
+    }
+  });
+  return result;
 
-
-
-var isArray = __webpack_require__(563);
-
-module.exports = function isObject(val) {
-  return val != null && typeof val === 'object' && isArray(val) === false;
-};
+}
 
 
 /***/ }),
@@ -61339,7 +61918,7 @@ const CacheableRequest = __webpack_require__(946);
 const toReadableStream = __webpack_require__(952);
 const is = __webpack_require__(534);
 const timer = __webpack_require__(456);
-const timedOut = __webpack_require__(469);
+const timedOut = __webpack_require__(646);
 const getBodySize = __webpack_require__(57);
 const getResponse = __webpack_require__(633);
 const progress = __webpack_require__(365);
@@ -61847,7 +62426,20 @@ module.exports = copy
 
 
 /***/ }),
-/* 596 */,
+/* 596 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var decodeUriComponent = __webpack_require__(108)
+
+function customDecodeUriComponent(string) {
+  // `decodeUriComponent` turns `+` into ` `, but that's not wanted.
+  return decodeUriComponent(string.replace(/\+/g, "%2B"))
+}
+
+module.exports = customDecodeUriComponent
+
+
+/***/ }),
 /* 597 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -65246,7 +65838,173 @@ module.exports = {
 
 
 /***/ }),
-/* 646 */,
+/* 646 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const net = __webpack_require__(631);
+
+class TimeoutError extends Error {
+	constructor(threshold, event) {
+		super(`Timeout awaiting '${event}' for ${threshold}ms`);
+		this.name = 'TimeoutError';
+		this.code = 'ETIMEDOUT';
+		this.event = event;
+	}
+}
+
+const reentry = Symbol('reentry');
+
+const noop = () => {};
+
+module.exports = (request, delays, options) => {
+	/* istanbul ignore next: this makes sure timed-out isn't called twice */
+	if (request[reentry]) {
+		return;
+	}
+
+	request[reentry] = true;
+
+	let stopNewTimeouts = false;
+
+	const addTimeout = (delay, callback, ...args) => {
+		// An error had been thrown before. Going further would result in uncaught errors.
+		// See https://github.com/sindresorhus/got/issues/631#issuecomment-435675051
+		if (stopNewTimeouts) {
+			return noop;
+		}
+
+		// Event loop order is timers, poll, immediates.
+		// The timed event may emit during the current tick poll phase, so
+		// defer calling the handler until the poll phase completes.
+		let immediate;
+		const timeout = setTimeout(() => {
+			immediate = setImmediate(callback, delay, ...args);
+			/* istanbul ignore next: added in node v9.7.0 */
+			if (immediate.unref) {
+				immediate.unref();
+			}
+		}, delay);
+
+		/* istanbul ignore next: in order to support electron renderer */
+		if (timeout.unref) {
+			timeout.unref();
+		}
+
+		const cancel = () => {
+			clearTimeout(timeout);
+			clearImmediate(immediate);
+		};
+
+		cancelers.push(cancel);
+
+		return cancel;
+	};
+
+	const {host, hostname} = options;
+	const timeoutHandler = (delay, event) => {
+		request.emit('error', new TimeoutError(delay, event));
+		request.once('error', () => {}); // Ignore the `socket hung up` error made by request.abort()
+
+		request.abort();
+	};
+
+	const cancelers = [];
+	const cancelTimeouts = () => {
+		stopNewTimeouts = true;
+		cancelers.forEach(cancelTimeout => cancelTimeout());
+	};
+
+	request.once('error', cancelTimeouts);
+	request.once('response', response => {
+		response.once('end', cancelTimeouts);
+	});
+
+	if (delays.request !== undefined) {
+		addTimeout(delays.request, timeoutHandler, 'request');
+	}
+
+	if (delays.socket !== undefined) {
+		const socketTimeoutHandler = () => {
+			timeoutHandler(delays.socket, 'socket');
+		};
+
+		request.setTimeout(delays.socket, socketTimeoutHandler);
+
+		// `request.setTimeout(0)` causes a memory leak.
+		// We can just remove the listener and forget about the timer - it's unreffed.
+		// See https://github.com/sindresorhus/got/issues/690
+		cancelers.push(() => request.removeListener('timeout', socketTimeoutHandler));
+	}
+
+	if (delays.lookup !== undefined && !request.socketPath && !net.isIP(hostname || host)) {
+		request.once('socket', socket => {
+			/* istanbul ignore next: hard to test */
+			if (socket.connecting) {
+				const cancelTimeout = addTimeout(delays.lookup, timeoutHandler, 'lookup');
+				socket.once('lookup', cancelTimeout);
+			}
+		});
+	}
+
+	if (delays.connect !== undefined) {
+		request.once('socket', socket => {
+			/* istanbul ignore next: hard to test */
+			if (socket.connecting) {
+				const timeConnect = () => addTimeout(delays.connect, timeoutHandler, 'connect');
+
+				if (request.socketPath || net.isIP(hostname || host)) {
+					socket.once('connect', timeConnect());
+				} else {
+					socket.once('lookup', error => {
+						if (error === null) {
+							socket.once('connect', timeConnect());
+						}
+					});
+				}
+			}
+		});
+	}
+
+	if (delays.secureConnect !== undefined && options.protocol === 'https:') {
+		request.once('socket', socket => {
+			/* istanbul ignore next: hard to test */
+			if (socket.connecting) {
+				socket.once('connect', () => {
+					const cancelTimeout = addTimeout(delays.secureConnect, timeoutHandler, 'secureConnect');
+					socket.once('secureConnect', cancelTimeout);
+				});
+			}
+		});
+	}
+
+	if (delays.send !== undefined) {
+		request.once('socket', socket => {
+			const timeRequest = () => addTimeout(delays.send, timeoutHandler, 'send');
+			/* istanbul ignore next: hard to test */
+			if (socket.connecting) {
+				socket.once('connect', () => {
+					request.once('upload-complete', timeRequest());
+				});
+			} else {
+				request.once('upload-complete', timeRequest());
+			}
+		});
+	}
+
+	if (delays.response !== undefined) {
+		request.once('upload-complete', () => {
+			const cancelTimeout = addTimeout(delays.response, timeoutHandler, 'response');
+			request.once('response', cancelTimeout);
+		});
+	}
+};
+
+module.exports.TimeoutError = TimeoutError;
+
+
+/***/ }),
 /* 647 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -67001,7 +67759,53 @@ var _default = validate;
 exports.default = _default;
 
 /***/ }),
-/* 677 */,
+/* 677 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __webpack_require__(747)
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), options)
+}
+
+function checkStat (stat, options) {
+  return stat.isFile() && checkMode(stat, options)
+}
+
+function checkMode (stat, options) {
+  var mod = stat.mode
+  var uid = stat.uid
+  var gid = stat.gid
+
+  var myUid = options.uid !== undefined ?
+    options.uid : process.getuid && process.getuid()
+  var myGid = options.gid !== undefined ?
+    options.gid : process.getgid && process.getgid()
+
+  var u = parseInt('100', 8)
+  var g = parseInt('010', 8)
+  var o = parseInt('001', 8)
+  var ug = u | g
+
+  var ret = (mod & o) ||
+    (mod & g) && gid === myGid ||
+    (mod & u) && uid === myUid ||
+    (mod & ug) && myUid === 0
+
+  return ret
+}
+
+
+/***/ }),
 /* 678 */,
 /* 679 */,
 /* 680 */,
@@ -67077,7 +67881,7 @@ exports.default = _default;
 
 
 
-var isObject = __webpack_require__(565);
+var isObject = __webpack_require__(199);
 var hasValues = __webpack_require__(10);
 var get = __webpack_require__(837);
 
@@ -67629,7 +68433,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 "use strict";
 
 const pump = __webpack_require__(453);
-const bufferStream = __webpack_require__(72);
+const bufferStream = __webpack_require__(330);
 
 class MaxBufferError extends Error {
 	constructor() {
@@ -69325,7 +70129,7 @@ var core
 if (process.platform === 'win32' || global.TESTING_WINDOWS) {
   core = __webpack_require__(818)
 } else {
-  core = __webpack_require__(842)
+  core = __webpack_require__(677)
 }
 
 module.exports = isexe
@@ -69949,7 +70753,7 @@ exports.defaultSetter = defaultSetter;
 
 var isObject = __webpack_require__(384);
 var define = __webpack_require__(230);
-var utils = __webpack_require__(127);
+var utils = __webpack_require__(200);
 var ownNames;
 
 /**
@@ -72415,16 +73219,112 @@ if (typeof process !== 'undefined' && process.type === 'renderer') {
 
 /***/ }),
 /* 785 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module) {
 
-var decodeUriComponent = __webpack_require__(108)
+// please no
+module.exports = function zalgo(text, options) {
+  text = text || "   he is here   ";
+  var soul = {
+    "up" : [
+      '̍', '̎', '̄', '̅',
+      '̿', '̑', '̆', '̐',
+      '͒', '͗', '͑', '̇',
+      '̈', '̊', '͂', '̓',
+      '̈', '͊', '͋', '͌',
+      '̃', '̂', '̌', '͐',
+      '̀', '́', '̋', '̏',
+      '̒', '̓', '̔', '̽',
+      '̉', 'ͣ', 'ͤ', 'ͥ',
+      'ͦ', 'ͧ', 'ͨ', 'ͩ',
+      'ͪ', 'ͫ', 'ͬ', 'ͭ',
+      'ͮ', 'ͯ', '̾', '͛',
+      '͆', '̚'
+    ],
+    "down" : [
+      '̖', '̗', '̘', '̙',
+      '̜', '̝', '̞', '̟',
+      '̠', '̤', '̥', '̦',
+      '̩', '̪', '̫', '̬',
+      '̭', '̮', '̯', '̰',
+      '̱', '̲', '̳', '̹',
+      '̺', '̻', '̼', 'ͅ',
+      '͇', '͈', '͉', '͍',
+      '͎', '͓', '͔', '͕',
+      '͖', '͙', '͚', '̣'
+    ],
+    "mid" : [
+      '̕', '̛', '̀', '́',
+      '͘', '̡', '̢', '̧',
+      '̨', '̴', '̵', '̶',
+      '͜', '͝', '͞',
+      '͟', '͠', '͢', '̸',
+      '̷', '͡', ' ҉'
+    ]
+  },
+  all = [].concat(soul.up, soul.down, soul.mid),
+  zalgo = {};
 
-function customDecodeUriComponent(string) {
-  // `decodeUriComponent` turns `+` into ` `, but that's not wanted.
-  return decodeUriComponent(string.replace(/\+/g, "%2B"))
+  function randomNumber(range) {
+    var r = Math.floor(Math.random() * range);
+    return r;
+  }
+
+  function is_char(character) {
+    var bool = false;
+    all.filter(function (i) {
+      bool = (i === character);
+    });
+    return bool;
+  }
+  
+
+  function heComes(text, options) {
+    var result = '', counts, l;
+    options = options || {};
+    options["up"] = options["up"] || true;
+    options["mid"] = options["mid"] || true;
+    options["down"] = options["down"] || true;
+    options["size"] = options["size"] || "maxi";
+    text = text.split('');
+    for (l in text) {
+      if (is_char(l)) {
+        continue;
+      }
+      result = result + text[l];
+      counts = {"up" : 0, "down" : 0, "mid" : 0};
+      switch (options.size) {
+      case 'mini':
+        counts.up = randomNumber(8);
+        counts.min = randomNumber(2);
+        counts.down = randomNumber(8);
+        break;
+      case 'maxi':
+        counts.up = randomNumber(16) + 3;
+        counts.min = randomNumber(4) + 1;
+        counts.down = randomNumber(64) + 3;
+        break;
+      default:
+        counts.up = randomNumber(8) + 1;
+        counts.mid = randomNumber(6) / 2;
+        counts.down = randomNumber(8) + 1;
+        break;
+      }
+
+      var arr = ["up", "mid", "down"];
+      for (var d in arr) {
+        var index = arr[d];
+        for (var i = 0 ; i <= counts[index]; i++) {
+          if (options[index]) {
+            result = result + soul[index][randomNumber(soul[index].length)];
+          }
+        }
+      }
+    }
+    return result;
+  }
+  // don't summon him
+  return heComes(text);
 }
-
-module.exports = customDecodeUriComponent
 
 
 /***/ }),
@@ -74169,7 +75069,20 @@ module.exports = isAccessorDescriptor;
 /***/ }),
 /* 802 */,
 /* 803 */,
-/* 804 */,
+/* 804 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+//
+// Remark: Requiring this file will use the "safe" colors API which will not touch String.prototype
+//
+//   var colors = require('colors/safe);
+//   colors.red("foo")
+//
+//
+var colors = __webpack_require__(882);
+module.exports = colors;
+
+/***/ }),
 /* 805 */,
 /* 806 */,
 /* 807 */,
@@ -75226,49 +76139,1163 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /* 840 */,
 /* 841 */,
 /* 842 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports) {
 
-module.exports = isexe
-isexe.sync = sync
+"use strict";
 
-var fs = __webpack_require__(747)
 
-function isexe (path, options, cb) {
-  fs.stat(path, function (er, stat) {
-    cb(er, er ? false : checkStat(stat, options))
-  })
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const Endpoints = {
+  actions: {
+    addSelectedRepoToOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
+    cancelWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"],
+    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
+    createOrUpdateRepoSecret: ["PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    createRegistrationTokenForOrg: ["POST /orgs/{org}/actions/runners/registration-token"],
+    createRegistrationTokenForRepo: ["POST /repos/{owner}/{repo}/actions/runners/registration-token"],
+    createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
+    createRemoveTokenForRepo: ["POST /repos/{owner}/{repo}/actions/runners/remove-token"],
+    createWorkflowDispatch: ["POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"],
+    deleteArtifact: ["DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
+    deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    deleteSelfHostedRunnerFromOrg: ["DELETE /orgs/{org}/actions/runners/{runner_id}"],
+    deleteSelfHostedRunnerFromRepo: ["DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"],
+    deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    deleteWorkflowRunLogs: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
+    downloadArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}"],
+    downloadJobLogsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"],
+    downloadWorkflowRunLogs: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
+    getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
+    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
+    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
+    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
+    getSelfHostedRunnerForRepo: ["GET /repos/{owner}/{repo}/actions/runners/{runner_id}"],
+    getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
+    getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    getWorkflowRunUsage: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"],
+    getWorkflowUsage: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"],
+    listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
+    listJobsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"],
+    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
+    listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
+    listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
+    listRunnerApplicationsForRepo: ["GET /repos/{owner}/{repo}/actions/runners/downloads"],
+    listSelectedReposForOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}/repositories"],
+    listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
+    listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
+    listWorkflowRunArtifacts: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"],
+    listWorkflowRuns: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"],
+    listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
+    reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
+    removeSelectedRepoFromOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
+    setSelectedReposForOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"]
+  },
+  activity: {
+    checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
+    deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
+    deleteThreadSubscription: ["DELETE /notifications/threads/{thread_id}/subscription"],
+    getFeeds: ["GET /feeds"],
+    getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
+    getThread: ["GET /notifications/threads/{thread_id}"],
+    getThreadSubscriptionForAuthenticatedUser: ["GET /notifications/threads/{thread_id}/subscription"],
+    listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
+    listNotificationsForAuthenticatedUser: ["GET /notifications"],
+    listOrgEventsForAuthenticatedUser: ["GET /users/{username}/events/orgs/{org}"],
+    listPublicEvents: ["GET /events"],
+    listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
+    listPublicEventsForUser: ["GET /users/{username}/events/public"],
+    listPublicOrgEvents: ["GET /orgs/{org}/events"],
+    listReceivedEventsForUser: ["GET /users/{username}/received_events"],
+    listReceivedPublicEventsForUser: ["GET /users/{username}/received_events/public"],
+    listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
+    listRepoNotificationsForAuthenticatedUser: ["GET /repos/{owner}/{repo}/notifications"],
+    listReposStarredByAuthenticatedUser: ["GET /user/starred"],
+    listReposStarredByUser: ["GET /users/{username}/starred"],
+    listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
+    listStargazersForRepo: ["GET /repos/{owner}/{repo}/stargazers"],
+    listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
+    listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
+    markNotificationsAsRead: ["PUT /notifications"],
+    markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
+    markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
+    setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
+    setThreadSubscription: ["PUT /notifications/threads/{thread_id}/subscription"],
+    starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
+    unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
+  },
+  apps: {
+    addRepoToInstallation: ["PUT /user/installations/{installation_id}/repositories/{repository_id}"],
+    checkToken: ["POST /applications/{client_id}/token"],
+    createContentAttachment: ["POST /content_references/{content_reference_id}/attachments", {
+      mediaType: {
+        previews: ["corsair"]
+      }
+    }],
+    createFromManifest: ["POST /app-manifests/{code}/conversions"],
+    createInstallationAccessToken: ["POST /app/installations/{installation_id}/access_tokens"],
+    deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
+    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
+    deleteToken: ["DELETE /applications/{client_id}/token"],
+    getAuthenticated: ["GET /app"],
+    getBySlug: ["GET /apps/{app_slug}"],
+    getInstallation: ["GET /app/installations/{installation_id}"],
+    getOrgInstallation: ["GET /orgs/{org}/installation"],
+    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
+    getSubscriptionPlanForAccount: ["GET /marketplace_listing/accounts/{account_id}"],
+    getSubscriptionPlanForAccountStubbed: ["GET /marketplace_listing/stubbed/accounts/{account_id}"],
+    getUserInstallation: ["GET /users/{username}/installation"],
+    listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
+    listAccountsForPlanStubbed: ["GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"],
+    listInstallationReposForAuthenticatedUser: ["GET /user/installations/{installation_id}/repositories"],
+    listInstallations: ["GET /app/installations"],
+    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
+    listPlans: ["GET /marketplace_listing/plans"],
+    listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
+    listReposAccessibleToInstallation: ["GET /installation/repositories"],
+    listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
+    listSubscriptionsForAuthenticatedUserStubbed: ["GET /user/marketplace_purchases/stubbed"],
+    removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}"],
+    resetToken: ["PATCH /applications/{client_id}/token"],
+    revokeInstallationAccessToken: ["DELETE /installation/token"],
+    suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
+    unsuspendInstallation: ["DELETE /app/installations/{installation_id}/suspended"]
+  },
+  billing: {
+    getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
+    getGithubActionsBillingUser: ["GET /users/{username}/settings/billing/actions"],
+    getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
+    getGithubPackagesBillingUser: ["GET /users/{username}/settings/billing/packages"],
+    getSharedStorageBillingOrg: ["GET /orgs/{org}/settings/billing/shared-storage"],
+    getSharedStorageBillingUser: ["GET /users/{username}/settings/billing/shared-storage"]
+  },
+  checks: {
+    create: ["POST /repos/{owner}/{repo}/check-runs", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    createSuite: ["POST /repos/{owner}/{repo}/check-suites", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    listAnnotations: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    listForSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    rerequestSuite: ["POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    setSuitesPreferences: ["PATCH /repos/{owner}/{repo}/check-suites/preferences", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }],
+    update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}", {
+      mediaType: {
+        previews: ["antiope"]
+      }
+    }]
+  },
+  codeScanning: {
+    getAlert: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}", {}, {
+      renamedParameters: {
+        alert_id: "alert_number"
+      }
+    }],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
+    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
+    updateAlert: ["PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"],
+    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
+  },
+  codesOfConduct: {
+    getAllCodesOfConduct: ["GET /codes_of_conduct", {
+      mediaType: {
+        previews: ["scarlet-witch"]
+      }
+    }],
+    getConductCode: ["GET /codes_of_conduct/{key}", {
+      mediaType: {
+        previews: ["scarlet-witch"]
+      }
+    }],
+    getForRepo: ["GET /repos/{owner}/{repo}/community/code_of_conduct", {
+      mediaType: {
+        previews: ["scarlet-witch"]
+      }
+    }]
+  },
+  emojis: {
+    get: ["GET /emojis"]
+  },
+  gists: {
+    checkIsStarred: ["GET /gists/{gist_id}/star"],
+    create: ["POST /gists"],
+    createComment: ["POST /gists/{gist_id}/comments"],
+    delete: ["DELETE /gists/{gist_id}"],
+    deleteComment: ["DELETE /gists/{gist_id}/comments/{comment_id}"],
+    fork: ["POST /gists/{gist_id}/forks"],
+    get: ["GET /gists/{gist_id}"],
+    getComment: ["GET /gists/{gist_id}/comments/{comment_id}"],
+    getRevision: ["GET /gists/{gist_id}/{sha}"],
+    list: ["GET /gists"],
+    listComments: ["GET /gists/{gist_id}/comments"],
+    listCommits: ["GET /gists/{gist_id}/commits"],
+    listForUser: ["GET /users/{username}/gists"],
+    listForks: ["GET /gists/{gist_id}/forks"],
+    listPublic: ["GET /gists/public"],
+    listStarred: ["GET /gists/starred"],
+    star: ["PUT /gists/{gist_id}/star"],
+    unstar: ["DELETE /gists/{gist_id}/star"],
+    update: ["PATCH /gists/{gist_id}"],
+    updateComment: ["PATCH /gists/{gist_id}/comments/{comment_id}"]
+  },
+  git: {
+    createBlob: ["POST /repos/{owner}/{repo}/git/blobs"],
+    createCommit: ["POST /repos/{owner}/{repo}/git/commits"],
+    createRef: ["POST /repos/{owner}/{repo}/git/refs"],
+    createTag: ["POST /repos/{owner}/{repo}/git/tags"],
+    createTree: ["POST /repos/{owner}/{repo}/git/trees"],
+    deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
+    getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
+    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
+    getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
+    getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
+    getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
+    listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
+    updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"]
+  },
+  gitignore: {
+    getAllTemplates: ["GET /gitignore/templates"],
+    getTemplate: ["GET /gitignore/templates/{name}"]
+  },
+  interactions: {
+    getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }],
+    getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }],
+    removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }],
+    removeRestrictionsForRepo: ["DELETE /repos/{owner}/{repo}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }],
+    setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }],
+    setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits", {
+      mediaType: {
+        previews: ["sombra"]
+      }
+    }]
+  },
+  issues: {
+    addAssignees: ["POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
+    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
+    create: ["POST /repos/{owner}/{repo}/issues"],
+    createComment: ["POST /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    createLabel: ["POST /repos/{owner}/{repo}/labels"],
+    createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
+    deleteComment: ["DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
+    deleteMilestone: ["DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"],
+    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
+    getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
+    getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
+    getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
+    list: ["GET /issues"],
+    listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
+    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
+    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
+    listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
+    listEventsForTimeline: ["GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", {
+      mediaType: {
+        previews: ["mockingbird"]
+      }
+    }],
+    listForAuthenticatedUser: ["GET /user/issues"],
+    listForOrg: ["GET /orgs/{org}/issues"],
+    listForRepo: ["GET /repos/{owner}/{repo}/issues"],
+    listLabelsForMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"],
+    listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
+    listLabelsOnIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
+    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    removeAllLabels: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    removeAssignees: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"],
+    removeLabel: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"],
+    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
+    updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
+    updateMilestone: ["PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"]
+  },
+  licenses: {
+    get: ["GET /licenses/{license}"],
+    getAllCommonlyUsed: ["GET /licenses"],
+    getForRepo: ["GET /repos/{owner}/{repo}/license"]
+  },
+  markdown: {
+    render: ["POST /markdown"],
+    renderRaw: ["POST /markdown/raw", {
+      headers: {
+        "content-type": "text/plain; charset=utf-8"
+      }
+    }]
+  },
+  meta: {
+    get: ["GET /meta"]
+  },
+  migrations: {
+    cancelImport: ["DELETE /repos/{owner}/{repo}/import"],
+    deleteArchiveForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/archive", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    deleteArchiveForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/archive", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    downloadArchiveForOrg: ["GET /orgs/{org}/migrations/{migration_id}/archive", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    getArchiveForAuthenticatedUser: ["GET /user/migrations/{migration_id}/archive", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    getCommitAuthors: ["GET /repos/{owner}/{repo}/import/authors"],
+    getImportStatus: ["GET /repos/{owner}/{repo}/import"],
+    getLargeFiles: ["GET /repos/{owner}/{repo}/import/large_files"],
+    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    listForAuthenticatedUser: ["GET /user/migrations", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    listForOrg: ["GET /orgs/{org}/migrations", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    listReposForUser: ["GET /user/migrations/{migration_id}/repositories", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    mapCommitAuthor: ["PATCH /repos/{owner}/{repo}/import/authors/{author_id}"],
+    setLfsPreference: ["PATCH /repos/{owner}/{repo}/import/lfs"],
+    startForAuthenticatedUser: ["POST /user/migrations"],
+    startForOrg: ["POST /orgs/{org}/migrations"],
+    startImport: ["PUT /repos/{owner}/{repo}/import"],
+    unlockRepoForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    unlockRepoForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock", {
+      mediaType: {
+        previews: ["wyandotte"]
+      }
+    }],
+    updateImport: ["PATCH /repos/{owner}/{repo}/import"]
+  },
+  orgs: {
+    blockUser: ["PUT /orgs/{org}/blocks/{username}"],
+    checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
+    checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
+    checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
+    convertMemberToOutsideCollaborator: ["PUT /orgs/{org}/outside_collaborators/{username}"],
+    createInvitation: ["POST /orgs/{org}/invitations"],
+    createWebhook: ["POST /orgs/{org}/hooks"],
+    deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
+    get: ["GET /orgs/{org}"],
+    getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
+    getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
+    getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
+    list: ["GET /organizations"],
+    listAppInstallations: ["GET /orgs/{org}/installations"],
+    listBlockedUsers: ["GET /orgs/{org}/blocks"],
+    listForAuthenticatedUser: ["GET /user/orgs"],
+    listForUser: ["GET /users/{username}/orgs"],
+    listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
+    listMembers: ["GET /orgs/{org}/members"],
+    listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
+    listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
+    listPendingInvitations: ["GET /orgs/{org}/invitations"],
+    listPublicMembers: ["GET /orgs/{org}/public_members"],
+    listWebhooks: ["GET /orgs/{org}/hooks"],
+    pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
+    removeMember: ["DELETE /orgs/{org}/members/{username}"],
+    removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
+    removeOutsideCollaborator: ["DELETE /orgs/{org}/outside_collaborators/{username}"],
+    removePublicMembershipForAuthenticatedUser: ["DELETE /orgs/{org}/public_members/{username}"],
+    setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
+    setPublicMembershipForAuthenticatedUser: ["PUT /orgs/{org}/public_members/{username}"],
+    unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
+    update: ["PATCH /orgs/{org}"],
+    updateMembershipForAuthenticatedUser: ["PATCH /user/memberships/orgs/{org}"],
+    updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"]
+  },
+  projects: {
+    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    createCard: ["POST /projects/columns/{column_id}/cards", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    createColumn: ["POST /projects/{project_id}/columns", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    createForAuthenticatedUser: ["POST /user/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    createForOrg: ["POST /orgs/{org}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    createForRepo: ["POST /repos/{owner}/{repo}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    delete: ["DELETE /projects/{project_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    deleteCard: ["DELETE /projects/columns/cards/{card_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    deleteColumn: ["DELETE /projects/columns/{column_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    get: ["GET /projects/{project_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    getCard: ["GET /projects/columns/cards/{card_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    getColumn: ["GET /projects/columns/{column_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    getPermissionForUser: ["GET /projects/{project_id}/collaborators/{username}/permission", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listCards: ["GET /projects/columns/{column_id}/cards", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listCollaborators: ["GET /projects/{project_id}/collaborators", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listColumns: ["GET /projects/{project_id}/columns", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listForOrg: ["GET /orgs/{org}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listForRepo: ["GET /repos/{owner}/{repo}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listForUser: ["GET /users/{username}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    moveCard: ["POST /projects/columns/cards/{card_id}/moves", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    moveColumn: ["POST /projects/columns/{column_id}/moves", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    removeCollaborator: ["DELETE /projects/{project_id}/collaborators/{username}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    update: ["PATCH /projects/{project_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    updateCard: ["PATCH /projects/columns/cards/{card_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    updateColumn: ["PATCH /projects/columns/{column_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }]
+  },
+  pulls: {
+    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    create: ["POST /repos/{owner}/{repo}/pulls"],
+    createReplyForReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"],
+    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    createReviewComment: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
+    deletePendingReview: ["DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    deleteReviewComment: ["DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
+    dismissReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"],
+    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
+    getReview: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
+    list: ["GET /repos/{owner}/{repo}/pulls"],
+    listCommentsForReview: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"],
+    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
+    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
+    listRequestedReviewers: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
+    listReviewComments: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"],
+    listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
+    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    removeRequestedReviewers: ["DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
+    requestReviewers: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
+    submitReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"],
+    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
+    updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch", {
+      mediaType: {
+        previews: ["lydian"]
+      }
+    }],
+    updateReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
+    updateReviewComment: ["PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"]
+  },
+  rateLimit: {
+    get: ["GET /rate_limit"]
+  },
+  reactions: {
+    createForCommitComment: ["POST /repos/{owner}/{repo}/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    createForIssue: ["POST /repos/{owner}/{repo}/issues/{issue_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    createForIssueComment: ["POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    createForPullRequestReviewComment: ["POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    createForTeamDiscussionCommentInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    createForTeamDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForIssue: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForIssueComment: ["DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForPullRequestComment: ["DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForTeamDiscussion: ["DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteForTeamDiscussionComment: ["DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    deleteLegacy: ["DELETE /reactions/{reaction_id}", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }, {
+      deprecated: "octokit.reactions.deleteLegacy() is deprecated, see https://developer.github.com/v3/reactions/#delete-a-reaction-legacy"
+    }],
+    listForCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    listForIssueComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    listForPullRequestReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    listForTeamDiscussionCommentInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
+    listForTeamDiscussionInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }]
+  },
+  repos: {
+    acceptInvitation: ["PATCH /user/repository_invitations/{invitation_id}"],
+    addAppAccessRestrictions: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps", {}, {
+      mapToData: "apps"
+    }],
+    addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
+    addStatusCheckContexts: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts", {}, {
+      mapToData: "contexts"
+    }],
+    addTeamAccessRestrictions: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams", {}, {
+      mapToData: "teams"
+    }],
+    addUserAccessRestrictions: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users", {}, {
+      mapToData: "users"
+    }],
+    checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
+    checkVulnerabilityAlerts: ["GET /repos/{owner}/{repo}/vulnerability-alerts", {
+      mediaType: {
+        previews: ["dorian"]
+      }
+    }],
+    compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
+    createCommitComment: ["POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
+    createCommitSignatureProtection: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
+      mediaType: {
+        previews: ["zzzax"]
+      }
+    }],
+    createCommitStatus: ["POST /repos/{owner}/{repo}/statuses/{sha}"],
+    createDeployKey: ["POST /repos/{owner}/{repo}/keys"],
+    createDeployment: ["POST /repos/{owner}/{repo}/deployments"],
+    createDeploymentStatus: ["POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"],
+    createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
+    createForAuthenticatedUser: ["POST /user/repos"],
+    createFork: ["POST /repos/{owner}/{repo}/forks"],
+    createInOrg: ["POST /orgs/{org}/repos"],
+    createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
+    createPagesSite: ["POST /repos/{owner}/{repo}/pages", {
+      mediaType: {
+        previews: ["switcheroo"]
+      }
+    }],
+    createRelease: ["POST /repos/{owner}/{repo}/releases"],
+    createUsingTemplate: ["POST /repos/{template_owner}/{template_repo}/generate", {
+      mediaType: {
+        previews: ["baptiste"]
+      }
+    }],
+    createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
+    declineInvitation: ["DELETE /user/repository_invitations/{invitation_id}"],
+    delete: ["DELETE /repos/{owner}/{repo}"],
+    deleteAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"],
+    deleteAdminBranchProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
+    deleteBranchProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection"],
+    deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
+    deleteCommitSignatureProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
+      mediaType: {
+        previews: ["zzzax"]
+      }
+    }],
+    deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
+    deleteDeployment: ["DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"],
+    deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
+    deleteInvitation: ["DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"],
+    deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages", {
+      mediaType: {
+        previews: ["switcheroo"]
+      }
+    }],
+    deletePullRequestReviewProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
+    deleteReleaseAsset: ["DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+    deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
+    disableAutomatedSecurityFixes: ["DELETE /repos/{owner}/{repo}/automated-security-fixes", {
+      mediaType: {
+        previews: ["london"]
+      }
+    }],
+    disableVulnerabilityAlerts: ["DELETE /repos/{owner}/{repo}/vulnerability-alerts", {
+      mediaType: {
+        previews: ["dorian"]
+      }
+    }],
+    downloadArchive: ["GET /repos/{owner}/{repo}/{archive_format}/{ref}"],
+    enableAutomatedSecurityFixes: ["PUT /repos/{owner}/{repo}/automated-security-fixes", {
+      mediaType: {
+        previews: ["london"]
+      }
+    }],
+    enableVulnerabilityAlerts: ["PUT /repos/{owner}/{repo}/vulnerability-alerts", {
+      mediaType: {
+        previews: ["dorian"]
+      }
+    }],
+    get: ["GET /repos/{owner}/{repo}"],
+    getAccessRestrictions: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"],
+    getAdminBranchProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
+    getAllStatusCheckContexts: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"],
+    getAllTopics: ["GET /repos/{owner}/{repo}/topics", {
+      mediaType: {
+        previews: ["mercy"]
+      }
+    }],
+    getAppsWithAccessToProtectedBranch: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps"],
+    getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
+    getBranchProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection"],
+    getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
+    getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
+    getCollaboratorPermissionLevel: ["GET /repos/{owner}/{repo}/collaborators/{username}/permission"],
+    getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
+    getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
+    getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
+    getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
+    getCommitSignatureProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
+      mediaType: {
+        previews: ["zzzax"]
+      }
+    }],
+    getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile", {
+      mediaType: {
+        previews: ["black-panther"]
+      }
+    }],
+    getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
+    getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
+    getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
+    getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
+    getDeploymentStatus: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"],
+    getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
+    getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
+    getPages: ["GET /repos/{owner}/{repo}/pages"],
+    getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
+    getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
+    getPullRequestReviewProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
+    getReadme: ["GET /repos/{owner}/{repo}/readme"],
+    getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
+    getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+    getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
+    getStatusChecksProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"],
+    getTeamsWithAccessToProtectedBranch: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams"],
+    getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
+    getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
+    getUsersWithAccessToProtectedBranch: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users"],
+    getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
+    getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
+    listBranches: ["GET /repos/{owner}/{repo}/branches"],
+    listBranchesForHeadCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", {
+      mediaType: {
+        previews: ["groot"]
+      }
+    }],
+    listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
+    listCommentsForCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
+    listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
+    listCommitStatusesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/statuses"],
+    listCommits: ["GET /repos/{owner}/{repo}/commits"],
+    listContributors: ["GET /repos/{owner}/{repo}/contributors"],
+    listDeployKeys: ["GET /repos/{owner}/{repo}/keys"],
+    listDeploymentStatuses: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"],
+    listDeployments: ["GET /repos/{owner}/{repo}/deployments"],
+    listForAuthenticatedUser: ["GET /user/repos"],
+    listForOrg: ["GET /orgs/{org}/repos"],
+    listForUser: ["GET /users/{username}/repos"],
+    listForks: ["GET /repos/{owner}/{repo}/forks"],
+    listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
+    listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
+    listLanguages: ["GET /repos/{owner}/{repo}/languages"],
+    listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
+    listPublic: ["GET /repositories"],
+    listPullRequestsAssociatedWithCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", {
+      mediaType: {
+        previews: ["groot"]
+      }
+    }],
+    listReleaseAssets: ["GET /repos/{owner}/{repo}/releases/{release_id}/assets"],
+    listReleases: ["GET /repos/{owner}/{repo}/releases"],
+    listTags: ["GET /repos/{owner}/{repo}/tags"],
+    listTeams: ["GET /repos/{owner}/{repo}/teams"],
+    listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
+    merge: ["POST /repos/{owner}/{repo}/merges"],
+    pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
+    removeAppAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps", {}, {
+      mapToData: "apps"
+    }],
+    removeCollaborator: ["DELETE /repos/{owner}/{repo}/collaborators/{username}"],
+    removeStatusCheckContexts: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts", {}, {
+      mapToData: "contexts"
+    }],
+    removeStatusCheckProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"],
+    removeTeamAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams", {}, {
+      mapToData: "teams"
+    }],
+    removeUserAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users", {}, {
+      mapToData: "users"
+    }],
+    replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics", {
+      mediaType: {
+        previews: ["mercy"]
+      }
+    }],
+    requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
+    setAdminBranchProtection: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
+    setAppAccessRestrictions: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps", {}, {
+      mapToData: "apps"
+    }],
+    setStatusCheckContexts: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts", {}, {
+      mapToData: "contexts"
+    }],
+    setTeamAccessRestrictions: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams", {}, {
+      mapToData: "teams"
+    }],
+    setUserAccessRestrictions: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users", {}, {
+      mapToData: "users"
+    }],
+    testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
+    transfer: ["POST /repos/{owner}/{repo}/transfer"],
+    update: ["PATCH /repos/{owner}/{repo}"],
+    updateBranchProtection: ["PUT /repos/{owner}/{repo}/branches/{branch}/protection"],
+    updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
+    updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
+    updateInvitation: ["PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"],
+    updatePullRequestReviewProtection: ["PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
+    updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
+    updateReleaseAsset: ["PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+    updateStatusCheckPotection: ["PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"],
+    updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
+    uploadReleaseAsset: ["POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}", {
+      baseUrl: "https://uploads.github.com"
+    }]
+  },
+  search: {
+    code: ["GET /search/code"],
+    commits: ["GET /search/commits", {
+      mediaType: {
+        previews: ["cloak"]
+      }
+    }],
+    issuesAndPullRequests: ["GET /search/issues"],
+    labels: ["GET /search/labels"],
+    repos: ["GET /search/repositories"],
+    topics: ["GET /search/topics", {
+      mediaType: {
+        previews: ["mercy"]
+      }
+    }],
+    users: ["GET /search/users"]
+  },
+  teams: {
+    addOrUpdateMembershipForUserInOrg: ["PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"],
+    addOrUpdateProjectPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    addOrUpdateRepoPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
+    checkPermissionsForProjectInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects/{project_id}", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    checkPermissionsForRepoInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
+    create: ["POST /orgs/{org}/teams"],
+    createDiscussionCommentInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"],
+    createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
+    deleteDiscussionCommentInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"],
+    deleteDiscussionInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"],
+    deleteInOrg: ["DELETE /orgs/{org}/teams/{team_slug}"],
+    getByName: ["GET /orgs/{org}/teams/{team_slug}"],
+    getDiscussionCommentInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"],
+    getDiscussionInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"],
+    getMembershipForUserInOrg: ["GET /orgs/{org}/teams/{team_slug}/memberships/{username}"],
+    list: ["GET /orgs/{org}/teams"],
+    listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
+    listDiscussionCommentsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"],
+    listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
+    listForAuthenticatedUser: ["GET /user/teams"],
+    listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
+    listPendingInvitationsInOrg: ["GET /orgs/{org}/teams/{team_slug}/invitations"],
+    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects", {
+      mediaType: {
+        previews: ["inertia"]
+      }
+    }],
+    listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
+    removeMembershipForUserInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"],
+    removeProjectInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"],
+    removeRepoInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
+    updateDiscussionCommentInOrg: ["PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"],
+    updateDiscussionInOrg: ["PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"],
+    updateInOrg: ["PATCH /orgs/{org}/teams/{team_slug}"]
+  },
+  users: {
+    addEmailForAuthenticated: ["POST /user/emails"],
+    block: ["PUT /user/blocks/{username}"],
+    checkBlocked: ["GET /user/blocks/{username}"],
+    checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
+    checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
+    createGpgKeyForAuthenticated: ["POST /user/gpg_keys"],
+    createPublicSshKeyForAuthenticated: ["POST /user/keys"],
+    deleteEmailForAuthenticated: ["DELETE /user/emails"],
+    deleteGpgKeyForAuthenticated: ["DELETE /user/gpg_keys/{gpg_key_id}"],
+    deletePublicSshKeyForAuthenticated: ["DELETE /user/keys/{key_id}"],
+    follow: ["PUT /user/following/{username}"],
+    getAuthenticated: ["GET /user"],
+    getByUsername: ["GET /users/{username}"],
+    getContextForUser: ["GET /users/{username}/hovercard"],
+    getGpgKeyForAuthenticated: ["GET /user/gpg_keys/{gpg_key_id}"],
+    getPublicSshKeyForAuthenticated: ["GET /user/keys/{key_id}"],
+    list: ["GET /users"],
+    listBlockedByAuthenticated: ["GET /user/blocks"],
+    listEmailsForAuthenticated: ["GET /user/emails"],
+    listFollowedByAuthenticated: ["GET /user/following"],
+    listFollowersForAuthenticatedUser: ["GET /user/followers"],
+    listFollowersForUser: ["GET /users/{username}/followers"],
+    listFollowingForUser: ["GET /users/{username}/following"],
+    listGpgKeysForAuthenticated: ["GET /user/gpg_keys"],
+    listGpgKeysForUser: ["GET /users/{username}/gpg_keys"],
+    listPublicEmailsForAuthenticated: ["GET /user/public_emails"],
+    listPublicKeysForUser: ["GET /users/{username}/keys"],
+    listPublicSshKeysForAuthenticated: ["GET /user/keys"],
+    setPrimaryEmailVisibilityForAuthenticated: ["PATCH /user/email/visibility"],
+    unblock: ["DELETE /user/blocks/{username}"],
+    unfollow: ["DELETE /user/following/{username}"],
+    updateAuthenticated: ["PATCH /user"]
+  }
+};
+
+const VERSION = "4.2.0";
+
+function endpointsToMethods(octokit, endpointsMap) {
+  const newMethods = {};
+
+  for (const [scope, endpoints] of Object.entries(endpointsMap)) {
+    for (const [methodName, endpoint] of Object.entries(endpoints)) {
+      const [route, defaults, decorations] = endpoint;
+      const [method, url] = route.split(/ /);
+      const endpointDefaults = Object.assign({
+        method,
+        url
+      }, defaults);
+
+      if (!newMethods[scope]) {
+        newMethods[scope] = {};
+      }
+
+      const scopeMethods = newMethods[scope];
+
+      if (decorations) {
+        scopeMethods[methodName] = decorate(octokit, scope, methodName, endpointDefaults, decorations);
+        continue;
+      }
+
+      scopeMethods[methodName] = octokit.request.defaults(endpointDefaults);
+    }
+  }
+
+  return newMethods;
 }
 
-function sync (path, options) {
-  return checkStat(fs.statSync(path), options)
+function decorate(octokit, scope, methodName, defaults, decorations) {
+  const requestWithDefaults = octokit.request.defaults(defaults);
+  /* istanbul ignore next */
+
+  function withDecorations(...args) {
+    // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
+    let options = requestWithDefaults.endpoint.merge(...args); // There are currently no other decorations than `.mapToData`
+
+    if (decorations.mapToData) {
+      options = Object.assign({}, options, {
+        data: options[decorations.mapToData],
+        [decorations.mapToData]: undefined
+      });
+      return requestWithDefaults(options);
+    }
+
+    if (decorations.renamed) {
+      const [newScope, newMethodName] = decorations.renamed;
+      octokit.log.warn(`octokit.${scope}.${methodName}() has been renamed to octokit.${newScope}.${newMethodName}()`);
+    }
+
+    if (decorations.deprecated) {
+      octokit.log.warn(decorations.deprecated);
+    }
+
+    if (decorations.renamedParameters) {
+      // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
+      const options = requestWithDefaults.endpoint.merge(...args);
+
+      for (const [name, alias] of Object.entries(decorations.renamedParameters)) {
+        if (name in options) {
+          octokit.log.warn(`"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`);
+
+          if (!(alias in options)) {
+            options[alias] = options[name];
+          }
+
+          delete options[name];
+        }
+      }
+
+      return requestWithDefaults(options);
+    } // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
+
+
+    return requestWithDefaults(...args);
+  }
+
+  return Object.assign(withDecorations, requestWithDefaults);
 }
 
-function checkStat (stat, options) {
-  return stat.isFile() && checkMode(stat, options)
+/**
+ * This plugin is a 1:1 copy of internal @octokit/rest plugins. The primary
+ * goal is to rebuild @octokit/rest on top of @octokit/core. Once that is
+ * done, we will remove the registerEndpoints methods and return the methods
+ * directly as with the other plugins. At that point we will also remove the
+ * legacy workarounds and deprecations.
+ *
+ * See the plan at
+ * https://github.com/octokit/plugin-rest-endpoint-methods.js/pull/1
+ */
+
+function restEndpointMethods(octokit) {
+  return endpointsToMethods(octokit, Endpoints);
 }
+restEndpointMethods.VERSION = VERSION;
 
-function checkMode (stat, options) {
-  var mod = stat.mode
-  var uid = stat.uid
-  var gid = stat.gid
-
-  var myUid = options.uid !== undefined ?
-    options.uid : process.getuid && process.getuid()
-  var myGid = options.gid !== undefined ?
-    options.gid : process.getgid && process.getgid()
-
-  var u = parseInt('100', 8)
-  var g = parseInt('010', 8)
-  var o = parseInt('001', 8)
-  var ug = u | g
-
-  var ret = (mod & o) ||
-    (mod & g) && gid === myGid ||
-    (mod & u) && uid === myUid ||
-    (mod & ug) && myUid === 0
-
-  return ret
-}
+exports.restEndpointMethods = restEndpointMethods;
+//# sourceMappingURL=index.js.map
 
 
 /***/ }),
@@ -75283,8 +77310,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var deprecation = __webpack_require__(984);
-var once = _interopDefault(__webpack_require__(969));
+var deprecation = __webpack_require__(513);
+var once = _interopDefault(__webpack_require__(49));
 
 const logOnce = once(deprecation => console.warn(deprecation));
 /**
@@ -77461,7 +79488,25 @@ module.exports = function defineProperty(obj, prop, val) {
 
 /***/ }),
 /* 878 */,
-/* 879 */,
+/* 879 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const is = __webpack_require__(534);
+
+module.exports = function deepFreeze(object) {
+	for (const [key, value] of Object.entries(object)) {
+		if (is.plainObject(value) || is.array(value)) {
+			deepFreeze(object[key]);
+		}
+	}
+
+	return Object.freeze(object);
+};
+
+
+/***/ }),
 /* 880 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -77536,7 +79581,187 @@ module.exports = Parser;
 
 /***/ }),
 /* 881 */,
-/* 882 */,
+/* 882 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+/*
+
+The MIT License (MIT)
+
+Original Library 
+  - Copyright (c) Marak Squires
+
+Additional functionality
+ - Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var colors = {};
+module.exports = colors;
+
+colors.themes = {};
+
+var ansiStyles = colors.styles = __webpack_require__(342);
+var defineProps = Object.defineProperties;
+
+colors.supportsColor = __webpack_require__(917);
+
+if (typeof colors.enabled === "undefined") {
+  colors.enabled = colors.supportsColor;
+}
+
+colors.stripColors = colors.strip = function(str){
+  return ("" + str).replace(/\x1B\[\d+m/g, '');
+};
+
+
+var stylize = colors.stylize = function stylize (str, style) {
+  return ansiStyles[style].open + str + ansiStyles[style].close;
+}
+
+var matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
+var escapeStringRegexp = function (str) {
+  if (typeof str !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+  return str.replace(matchOperatorsRe,  '\\$&');
+}
+
+function build(_styles) {
+  var builder = function builder() {
+    return applyStyle.apply(builder, arguments);
+  };
+  builder._styles = _styles;
+  // __proto__ is used because we must return a function, but there is
+  // no way to create a function with a different prototype.
+  builder.__proto__ = proto;
+  return builder;
+}
+
+var styles = (function () {
+  var ret = {};
+  ansiStyles.grey = ansiStyles.gray;
+  Object.keys(ansiStyles).forEach(function (key) {
+    ansiStyles[key].closeRe = new RegExp(escapeStringRegexp(ansiStyles[key].close), 'g');
+    ret[key] = {
+      get: function () {
+        return build(this._styles.concat(key));
+      }
+    };
+  });
+  return ret;
+})();
+
+var proto = defineProps(function colors() {}, styles);
+
+function applyStyle() {
+  var args = arguments;
+  var argsLen = args.length;
+  var str = argsLen !== 0 && String(arguments[0]);
+  if (argsLen > 1) {
+    for (var a = 1; a < argsLen; a++) {
+      str += ' ' + args[a];
+    }
+  }
+
+  if (!colors.enabled || !str) {
+    return str;
+  }
+
+  var nestedStyles = this._styles;
+
+  var i = nestedStyles.length;
+  while (i--) {
+    var code = ansiStyles[nestedStyles[i]];
+    str = code.open + str.replace(code.closeRe, code.open) + code.close;
+  }
+
+  return str;
+}
+
+function applyTheme (theme) {
+  for (var style in theme) {
+    (function(style){
+      colors[style] = function(str){
+        return colors[theme[style]](str);
+      };
+    })(style)
+  }
+}
+
+colors.setTheme = function (theme) {
+  if (typeof theme === 'string') {
+    try {
+      colors.themes[theme] = require(theme);
+      applyTheme(colors.themes[theme]);
+      return colors.themes[theme];
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
+  } else {
+    applyTheme(theme);
+  }
+};
+
+function init() {
+  var ret = {};
+  Object.keys(styles).forEach(function (name) {
+    ret[name] = {
+      get: function () {
+        return build([name]);
+      }
+    };
+  });
+  return ret;
+}
+
+var sequencer = function sequencer (map, str) {
+  var exploded = str.split(""), i = 0;
+  exploded = exploded.map(map);
+  return exploded.join("");
+};
+
+// custom formatter methods
+colors.trap = __webpack_require__(565);
+colors.zalgo = __webpack_require__(785);
+
+// maps
+colors.maps = {};
+colors.maps.america = __webpack_require__(73);
+colors.maps.zebra = __webpack_require__(315);
+colors.maps.rainbow = __webpack_require__(246);
+colors.maps.random = __webpack_require__(900)
+
+for (var map in colors.maps) {
+  (function(map){
+    colors[map] = function (str) {
+      return sequencer(colors.maps[map], str);
+    }
+  })(map)
+}
+
+defineProps(colors, init());
+
+/***/ }),
 /* 883 */,
 /* 884 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -78040,31 +80265,426 @@ module.exports = Parser;
 
 /***/ }),
 /* 886 */
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-/*!
- * repeat-element <https://github.com/jonschlinkert/repeat-element>
- *
- * Copyright (c) 2015-present, Jon Schlinkert.
- * Licensed under the MIT license.
+
+/**
+ * Module dependencies.
  */
 
+var colors = __webpack_require__(804)
+  , utils = __webpack_require__(974)
+  , repeat = utils.repeat
+  , truncate = utils.truncate
+  , pad = utils.pad;
 
+/**
+ * Table constructor
+ *
+ * @param {Object} options
+ * @api public
+ */
 
-module.exports = function repeat(ele, num) {
-  var arr = new Array(num);
+function Table (options){
+  this.options = utils.options({
+      chars: {
+          'top': '─'
+        , 'top-mid': '┬'
+        , 'top-left': '┌'
+        , 'top-right': '┐'
+        , 'bottom': '─'
+        , 'bottom-mid': '┴'
+        , 'bottom-left': '└'
+        , 'bottom-right': '┘'
+        , 'left': '│'
+        , 'left-mid': '├'
+        , 'mid': '─'
+        , 'mid-mid': '┼'
+        , 'right': '│'
+        , 'right-mid': '┤'
+        , 'middle': '│'
+      }
+    , truncate: '…'
+    , colWidths: []
+    , colAligns: []
+    , style: {
+          'padding-left': 1
+        , 'padding-right': 1
+        , head: ['red']
+        , border: ['grey']
+        , compact : false
+      }
+    , head: []
+  }, options);
+};
 
-  for (var i = 0; i < num; i++) {
-    arr[i] = ele;
+/**
+ * Inherit from Array.
+ */
+
+Table.prototype.__proto__ = Array.prototype;
+
+/**
+ * Width getter
+ *
+ * @return {Number} width
+ * @api public
+ */
+
+Table.prototype.__defineGetter__('width', function (){
+  var str = this.toString().split("\n");
+  if (str.length) return str[0].length;
+  return 0;
+});
+
+/**
+ * Render to a string.
+ *
+ * @return {String} table representation
+ * @api public
+ */
+
+Table.prototype.render
+Table.prototype.toString = function (){
+  var ret = ''
+    , options = this.options
+    , style = options.style
+    , head = options.head
+    , chars = options.chars
+    , truncater = options.truncate
+      , colWidths = options.colWidths || new Array(this.head.length)
+      , totalWidth = 0;
+
+    if (!head.length && !this.length) return '';
+
+    if (!colWidths.length){
+      var all_rows = this.slice(0);
+      if (head.length) { all_rows = all_rows.concat([head]) };
+
+      all_rows.forEach(function(cells){
+        // horizontal (arrays)
+        if (typeof cells === 'object' && cells.length) {
+          extractColumnWidths(cells);
+
+        // vertical (objects)
+        } else {
+          var header_cell = Object.keys(cells)[0]
+            , value_cell = cells[header_cell];
+
+          colWidths[0] = Math.max(colWidths[0] || 0, get_width(header_cell) || 0);
+
+          // cross (objects w/ array values)
+          if (typeof value_cell === 'object' && value_cell.length) {
+            extractColumnWidths(value_cell, 1);
+          } else {
+            colWidths[1] = Math.max(colWidths[1] || 0, get_width(value_cell) || 0);
+          }
+        }
+    });
+  };
+
+  totalWidth = (colWidths.length == 1 ? colWidths[0] : colWidths.reduce(
+    function (a, b){
+      return a + b
+    })) + colWidths.length + 1;
+
+  function extractColumnWidths(arr, offset) {
+    var offset = offset || 0;
+    arr.forEach(function(cell, i){
+      colWidths[i + offset] = Math.max(colWidths[i + offset] || 0, get_width(cell) || 0);
+    });
+  };
+
+  function get_width(obj) {
+    return typeof obj == 'object' && obj.width != undefined
+         ? obj.width
+         : ((typeof obj == 'object' ? utils.strlen(obj.text) : utils.strlen(obj)) + (style['padding-left'] || 0) + (style['padding-right'] || 0))
   }
 
-  return arr;
+  // draws a line
+  function line (line, left, right, intersection){
+    var width = 0
+      , line =
+          left
+        + repeat(line, totalWidth - 2)
+        + right;
+
+    colWidths.forEach(function (w, i){
+      if (i == colWidths.length - 1) return;
+      width += w + 1;
+      line = line.substr(0, width) + intersection + line.substr(width + 1);
+    });
+
+    return applyStyles(options.style.border, line);
+  };
+
+  // draws the top line
+  function lineTop (){
+    var l = line(chars.top
+               , chars['top-left'] || chars.top
+               , chars['top-right'] ||  chars.top
+               , chars['top-mid']);
+    if (l)
+      ret += l + "\n";
+  };
+
+  function generateRow (items, style) {
+    var cells = []
+      , max_height = 0;
+
+    // prepare vertical and cross table data
+    if (!Array.isArray(items) && typeof items === "object") {
+      var key = Object.keys(items)[0]
+        , value = items[key]
+        , first_cell_head = true;
+
+      if (Array.isArray(value)) {
+        items = value;
+        items.unshift(key);
+      } else {
+        items = [key, value];
+      }
+    }
+
+    // transform array of item strings into structure of cells
+    items.forEach(function (item, i) {
+      var contents = item.toString().split("\n").reduce(function (memo, l) {
+        memo.push(string(l, i));
+        return memo;
+      }, [])
+
+      var height = contents.length;
+      if (height > max_height) { max_height = height };
+
+      cells.push({ contents: contents , height: height });
+    });
+
+    // transform vertical cells into horizontal lines
+    var lines = new Array(max_height);
+    cells.forEach(function (cell, i) {
+      cell.contents.forEach(function (line, j) {
+        if (!lines[j]) { lines[j] = [] };
+        if (style || (first_cell_head && i === 0 && options.style.head)) {
+          line = applyStyles(options.style.head, line)
+        }
+
+        lines[j].push(line);
+      });
+
+      // populate empty lines in cell
+      for (var j = cell.height, l = max_height; j < l; j++) {
+        if (!lines[j]) { lines[j] = [] };
+        lines[j].push(string('', i));
+      }
+    });
+    var ret = "";
+    lines.forEach(function (line, index) {
+      if (ret.length > 0) {
+        ret += "\n" + applyStyles(options.style.border, chars.left);
+      }
+
+      ret += line.join(applyStyles(options.style.border, chars.middle)) + applyStyles(options.style.border, chars.right);
+    });
+
+    return applyStyles(options.style.border, chars.left) + ret;
+  };
+
+  function applyStyles(styles, subject) {
+    if (!subject)
+      return '';
+    styles.forEach(function(style) {
+      subject = colors[style](subject);
+    });
+    return subject;
+  };
+
+  // renders a string, by padding it or truncating it
+  function string (str, index){
+    var str = String(typeof str == 'object' && str.text ? str.text : str)
+      , length = utils.strlen(str)
+      , width = colWidths[index]
+          - (style['padding-left'] || 0)
+          - (style['padding-right'] || 0)
+      , align = options.colAligns[index] || 'left';
+
+    return repeat(' ', style['padding-left'] || 0)
+         + (length == width ? str :
+             (length < width
+              ? pad(str, ( width + (str.length - length) ), ' ', align == 'left' ? 'right' :
+                  (align == 'middle' ? 'both' : 'left'))
+              : (truncater ? truncate(str, width, truncater) : str))
+           )
+         + repeat(' ', style['padding-right'] || 0);
+  };
+
+  if (head.length){
+    lineTop();
+
+    ret += generateRow(head, style.head) + "\n"
+  }
+
+  if (this.length)
+    this.forEach(function (cells, i){
+      if (!head.length && i == 0)
+        lineTop();
+      else {
+        if (!style.compact || i<(!!head.length) ?1: false || cells.length == 0){
+          var l = line(chars.mid
+                     , chars['left-mid']
+                     , chars['right-mid']
+                     , chars['mid-mid']);
+          if (l)
+            ret += l + "\n"
+        }
+      }
+
+      if (cells.hasOwnProperty("length") && !cells.length) {
+        return
+      } else {
+        ret += generateRow(cells) + "\n";
+      };
+    });
+
+  var l = line(chars.bottom
+             , chars['bottom-left'] || chars.bottom
+             , chars['bottom-right'] || chars.bottom
+             , chars['bottom-mid']);
+  if (l)
+    ret += l;
+  else
+    // trim the last '\n' if we didn't add the bottom decoration
+    ret = ret.slice(0, -1);
+
+  return ret;
+};
+
+/**
+ * Module exports.
+ */
+
+module.exports = Table;
+
+module.exports.version = '0.0.1';
+
+
+/***/ }),
+/* 887 */
+/***/ (function(__unusedmodule, exports) {
+
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
+
+exports.GREATEST_LOWER_BOUND = 1;
+exports.LEAST_UPPER_BOUND = 2;
+
+/**
+ * Recursive implementation of binary search.
+ *
+ * @param aLow Indices here and lower do not contain the needle.
+ * @param aHigh Indices here and higher do not contain the needle.
+ * @param aNeedle The element being searched for.
+ * @param aHaystack The non-empty array being searched.
+ * @param aCompare Function which takes two elements and returns -1, 0, or 1.
+ * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
+ *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ */
+function recursiveSearch(aLow, aHigh, aNeedle, aHaystack, aCompare, aBias) {
+  // This function terminates when one of the following is true:
+  //
+  //   1. We find the exact element we are looking for.
+  //
+  //   2. We did not find the exact element, but we can return the index of
+  //      the next-closest element.
+  //
+  //   3. We did not find the exact element, and there is no next-closest
+  //      element than the one we are searching for, so we return -1.
+  var mid = Math.floor((aHigh - aLow) / 2) + aLow;
+  var cmp = aCompare(aNeedle, aHaystack[mid], true);
+  if (cmp === 0) {
+    // Found the element we are looking for.
+    return mid;
+  }
+  else if (cmp > 0) {
+    // Our needle is greater than aHaystack[mid].
+    if (aHigh - mid > 1) {
+      // The element is in the upper half.
+      return recursiveSearch(mid, aHigh, aNeedle, aHaystack, aCompare, aBias);
+    }
+
+    // The exact needle element was not found in this haystack. Determine if
+    // we are in termination case (3) or (2) and return the appropriate thing.
+    if (aBias == exports.LEAST_UPPER_BOUND) {
+      return aHigh < aHaystack.length ? aHigh : -1;
+    } else {
+      return mid;
+    }
+  }
+  else {
+    // Our needle is less than aHaystack[mid].
+    if (mid - aLow > 1) {
+      // The element is in the lower half.
+      return recursiveSearch(aLow, mid, aNeedle, aHaystack, aCompare, aBias);
+    }
+
+    // we are in termination case (3) or (2) and return the appropriate thing.
+    if (aBias == exports.LEAST_UPPER_BOUND) {
+      return mid;
+    } else {
+      return aLow < 0 ? -1 : aLow;
+    }
+  }
+}
+
+/**
+ * This is an implementation of binary search which will always try and return
+ * the index of the closest element if there is no exact hit. This is because
+ * mappings between original and generated line/col pairs are single points,
+ * and there is an implicit region between each of them, so a miss just means
+ * that you aren't on the very start of a region.
+ *
+ * @param aNeedle The element you are looking for.
+ * @param aHaystack The array that is being searched.
+ * @param aCompare A function which takes the needle and an element in the
+ *     array and returns -1, 0, or 1 depending on whether the needle is less
+ *     than, equal to, or greater than the element, respectively.
+ * @param aBias Either 'binarySearch.GREATEST_LOWER_BOUND' or
+ *     'binarySearch.LEAST_UPPER_BOUND'. Specifies whether to return the
+ *     closest element that is smaller than or greater than the one we are
+ *     searching for, respectively, if the exact element cannot be found.
+ *     Defaults to 'binarySearch.GREATEST_LOWER_BOUND'.
+ */
+exports.search = function search(aNeedle, aHaystack, aCompare, aBias) {
+  if (aHaystack.length === 0) {
+    return -1;
+  }
+
+  var index = recursiveSearch(-1, aHaystack.length, aNeedle, aHaystack,
+                              aCompare, aBias || exports.GREATEST_LOWER_BOUND);
+  if (index < 0) {
+    return -1;
+  }
+
+  // We have found either the exact element, or the next-closest element than
+  // the one we are searching for. However, there may be more than one such
+  // element. Make sure we always return the smallest of these.
+  while (index - 1 >= 0) {
+    if (aCompare(aHaystack[index], aHaystack[index - 1], true) !== 0) {
+      break;
+    }
+    --index;
+  }
+
+  return index;
 };
 
 
 /***/ }),
-/* 887 */,
 /* 888 */,
 /* 889 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -78622,7 +81242,138 @@ function descending(a, b)
 
 
 /***/ }),
-/* 893 */,
+/* 893 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const path = __webpack_require__(622);
+const niceTry = __webpack_require__(948);
+const resolveCommand = __webpack_require__(416);
+const escape = __webpack_require__(234);
+const readShebang = __webpack_require__(336);
+const semver = __webpack_require__(955);
+
+const isWin = process.platform === 'win32';
+const isExecutableRegExp = /\.(?:com|exe)$/i;
+const isCmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
+
+// `options.shell` is supported in Node ^4.8.0, ^5.7.0 and >= 6.0.0
+const supportsShellOption = niceTry(() => semver.satisfies(process.version, '^4.8.0 || ^5.7.0 || >= 6.0.0', true)) || false;
+
+function detectShebang(parsed) {
+    parsed.file = resolveCommand(parsed);
+
+    const shebang = parsed.file && readShebang(parsed.file);
+
+    if (shebang) {
+        parsed.args.unshift(parsed.file);
+        parsed.command = shebang;
+
+        return resolveCommand(parsed);
+    }
+
+    return parsed.file;
+}
+
+function parseNonShell(parsed) {
+    if (!isWin) {
+        return parsed;
+    }
+
+    // Detect & add support for shebangs
+    const commandFile = detectShebang(parsed);
+
+    // We don't need a shell if the command filename is an executable
+    const needsShell = !isExecutableRegExp.test(commandFile);
+
+    // If a shell is required, use cmd.exe and take care of escaping everything correctly
+    // Note that `forceShell` is an hidden option used only in tests
+    if (parsed.options.forceShell || needsShell) {
+        // Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
+        // The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
+        // Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
+        // we need to double escape them
+        const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile);
+
+        // Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
+        // This is necessary otherwise it will always fail with ENOENT in those cases
+        parsed.command = path.normalize(parsed.command);
+
+        // Escape command & arguments
+        parsed.command = escape.command(parsed.command);
+        parsed.args = parsed.args.map((arg) => escape.argument(arg, needsDoubleEscapeMetaChars));
+
+        const shellCommand = [parsed.command].concat(parsed.args).join(' ');
+
+        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
+        parsed.command = process.env.comspec || 'cmd.exe';
+        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
+    }
+
+    return parsed;
+}
+
+function parseShell(parsed) {
+    // If node supports the shell option, there's no need to mimic its behavior
+    if (supportsShellOption) {
+        return parsed;
+    }
+
+    // Mimic node shell option
+    // See https://github.com/nodejs/node/blob/b9f6a2dc059a1062776133f3d4fd848c4da7d150/lib/child_process.js#L335
+    const shellCommand = [parsed.command].concat(parsed.args).join(' ');
+
+    if (isWin) {
+        parsed.command = typeof parsed.options.shell === 'string' ? parsed.options.shell : process.env.comspec || 'cmd.exe';
+        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
+        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
+    } else {
+        if (typeof parsed.options.shell === 'string') {
+            parsed.command = parsed.options.shell;
+        } else if (process.platform === 'android') {
+            parsed.command = '/system/bin/sh';
+        } else {
+            parsed.command = '/bin/sh';
+        }
+
+        parsed.args = ['-c', shellCommand];
+    }
+
+    return parsed;
+}
+
+function parse(command, args, options) {
+    // Normalize arguments, similar to nodejs
+    if (args && !Array.isArray(args)) {
+        options = args;
+        args = null;
+    }
+
+    args = args ? args.slice(0) : []; // Clone array to avoid changing the original
+    options = Object.assign({}, options); // Clone object to avoid changing the original
+
+    // Build our parsed object
+    const parsed = {
+        command,
+        args,
+        options,
+        file: undefined,
+        original: {
+            command,
+            args,
+        },
+    };
+
+    // Delegate further parsing to shell or non-shell
+    return options.shell ? parseShell(parsed) : parseNonShell(parsed);
+}
+
+module.exports = parse;
+
+
+/***/ }),
 /* 894 */,
 /* 895 */,
 /* 896 */
@@ -78787,69 +81538,14 @@ exports.retryHttpClientResponse = retryHttpClientResponse;
 /* 900 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
+var colors = __webpack_require__(882);
 
-
-const u = __webpack_require__(147).fromCallback
-const path = __webpack_require__(622)
-const fs = __webpack_require__(598)
-const mkdir = __webpack_require__(63)
-const pathExists = __webpack_require__(322).pathExists
-
-function createLink (srcpath, dstpath, callback) {
-  function makeLink (srcpath, dstpath) {
-    fs.link(srcpath, dstpath, err => {
-      if (err) return callback(err)
-      callback(null)
-    })
-  }
-
-  pathExists(dstpath, (err, destinationExists) => {
-    if (err) return callback(err)
-    if (destinationExists) return callback(null)
-    fs.lstat(srcpath, (err, stat) => {
-      if (err) {
-        err.message = err.message.replace('lstat', 'ensureLink')
-        return callback(err)
-      }
-
-      const dir = path.dirname(dstpath)
-      pathExists(dir, (err, dirExists) => {
-        if (err) return callback(err)
-        if (dirExists) return makeLink(srcpath, dstpath)
-        mkdir.mkdirs(dir, err => {
-          if (err) return callback(err)
-          makeLink(srcpath, dstpath)
-        })
-      })
-    })
-  })
-}
-
-function createLinkSync (srcpath, dstpath, callback) {
-  const destinationExists = fs.existsSync(dstpath)
-  if (destinationExists) return undefined
-
-  try {
-    fs.lstatSync(srcpath)
-  } catch (err) {
-    err.message = err.message.replace('lstat', 'ensureLink')
-    throw err
-  }
-
-  const dir = path.dirname(dstpath)
-  const dirExists = fs.existsSync(dir)
-  if (dirExists) return fs.linkSync(srcpath, dstpath)
-  mkdir.mkdirsSync(dir)
-
-  return fs.linkSync(srcpath, dstpath)
-}
-
-module.exports = {
-  createLink: u(createLink),
-  createLinkSync
-}
-
+module.exports = (function () {
+  var available = ['underline', 'inverse', 'grey', 'yellow', 'red', 'green', 'blue', 'white', 'cyan', 'magenta'];
+  return function(letter, i, exploded) {
+    return letter === " " ? letter : colors[available[Math.round(Math.random() * (available.length - 1))]](letter);
+  };
+})();
 
 /***/ }),
 /* 901 */,
@@ -79351,7 +82047,7 @@ __exportStar(__webpack_require__(764), exports);
 
 var base64VLQ = __webpack_require__(277);
 var util = __webpack_require__(290);
-var ArraySet = __webpack_require__(66).ArraySet;
+var ArraySet = __webpack_require__(969).ArraySet;
 var MappingList = __webpack_require__(80).MappingList;
 
 /**
@@ -79925,7 +82621,72 @@ module.exports = asPromise;
 
 
 /***/ }),
-/* 917 */,
+/* 917 */
+/***/ (function(module) {
+
+/*
+The MIT License (MIT)
+
+Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+*/
+
+var argv = process.argv;
+
+module.exports = (function () {
+  if (argv.indexOf('--no-color') !== -1 ||
+    argv.indexOf('--color=false') !== -1) {
+    return false;
+  }
+
+  if (argv.indexOf('--color') !== -1 ||
+    argv.indexOf('--color=true') !== -1 ||
+    argv.indexOf('--color=always') !== -1) {
+    return true;
+  }
+
+  if (process.stdout && !process.stdout.isTTY) {
+    return false;
+  }
+
+  if (process.platform === 'win32') {
+    return true;
+  }
+
+  if ('COLORTERM' in process.env) {
+    return true;
+  }
+
+  if (process.env.TERM === 'dumb') {
+    return false;
+  }
+
+  if (/^screen|^xterm|^vt100|color|ansi|cygwin|linux/i.test(process.env.TERM)) {
+    return true;
+  }
+
+  return false;
+})();
+
+/***/ }),
 /* 918 */,
 /* 919 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -81612,7 +84373,7 @@ module.exports = input => (
 var sourceMappingURL   = __webpack_require__(436)
 
 var resolveUrl         = __webpack_require__(979)
-var decodeUriComponent = __webpack_require__(785)
+var decodeUriComponent = __webpack_require__(596)
 var urix               = __webpack_require__(175)
 var atob               = __webpack_require__(995)
 
@@ -83583,7 +86344,7 @@ const path = __webpack_require__(622)
 const copySync = __webpack_require__(640).copySync
 const removeSync = __webpack_require__(723).removeSync
 const mkdirpSync = __webpack_require__(63).mkdirsSync
-const buffer = __webpack_require__(73)
+const buffer = __webpack_require__(267)
 
 function moveSync (src, dest, options) {
   options = options || {}
@@ -83808,50 +86569,129 @@ module.exports = options => {
 /* 967 */,
 /* 968 */,
 /* 969 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-var wrappy = __webpack_require__(11)
-module.exports = wrappy(once)
-module.exports.strict = wrappy(onceStrict)
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
 
-once.proto = once(function () {
-  Object.defineProperty(Function.prototype, 'once', {
-    value: function () {
-      return once(this)
-    },
-    configurable: true
-  })
+var util = __webpack_require__(290);
+var has = Object.prototype.hasOwnProperty;
+var hasNativeMap = typeof Map !== "undefined";
 
-  Object.defineProperty(Function.prototype, 'onceStrict', {
-    value: function () {
-      return onceStrict(this)
-    },
-    configurable: true
-  })
-})
-
-function once (fn) {
-  var f = function () {
-    if (f.called) return f.value
-    f.called = true
-    return f.value = fn.apply(this, arguments)
-  }
-  f.called = false
-  return f
+/**
+ * A data structure which is a combination of an array and a set. Adding a new
+ * member is O(1), testing for membership is O(1), and finding the index of an
+ * element is O(1). Removing elements from the set is not supported. Only
+ * strings are supported for membership.
+ */
+function ArraySet() {
+  this._array = [];
+  this._set = hasNativeMap ? new Map() : Object.create(null);
 }
 
-function onceStrict (fn) {
-  var f = function () {
-    if (f.called)
-      throw new Error(f.onceError)
-    f.called = true
-    return f.value = fn.apply(this, arguments)
+/**
+ * Static method for creating ArraySet instances from an existing array.
+ */
+ArraySet.fromArray = function ArraySet_fromArray(aArray, aAllowDuplicates) {
+  var set = new ArraySet();
+  for (var i = 0, len = aArray.length; i < len; i++) {
+    set.add(aArray[i], aAllowDuplicates);
   }
-  var name = fn.name || 'Function wrapped with `once`'
-  f.onceError = name + " shouldn't be called more than once"
-  f.called = false
-  return f
-}
+  return set;
+};
+
+/**
+ * Return how many unique items are in this ArraySet. If duplicates have been
+ * added, than those do not count towards the size.
+ *
+ * @returns Number
+ */
+ArraySet.prototype.size = function ArraySet_size() {
+  return hasNativeMap ? this._set.size : Object.getOwnPropertyNames(this._set).length;
+};
+
+/**
+ * Add the given string to this set.
+ *
+ * @param String aStr
+ */
+ArraySet.prototype.add = function ArraySet_add(aStr, aAllowDuplicates) {
+  var sStr = hasNativeMap ? aStr : util.toSetString(aStr);
+  var isDuplicate = hasNativeMap ? this.has(aStr) : has.call(this._set, sStr);
+  var idx = this._array.length;
+  if (!isDuplicate || aAllowDuplicates) {
+    this._array.push(aStr);
+  }
+  if (!isDuplicate) {
+    if (hasNativeMap) {
+      this._set.set(aStr, idx);
+    } else {
+      this._set[sStr] = idx;
+    }
+  }
+};
+
+/**
+ * Is the given string a member of this set?
+ *
+ * @param String aStr
+ */
+ArraySet.prototype.has = function ArraySet_has(aStr) {
+  if (hasNativeMap) {
+    return this._set.has(aStr);
+  } else {
+    var sStr = util.toSetString(aStr);
+    return has.call(this._set, sStr);
+  }
+};
+
+/**
+ * What is the index of the given string in the array?
+ *
+ * @param String aStr
+ */
+ArraySet.prototype.indexOf = function ArraySet_indexOf(aStr) {
+  if (hasNativeMap) {
+    var idx = this._set.get(aStr);
+    if (idx >= 0) {
+        return idx;
+    }
+  } else {
+    var sStr = util.toSetString(aStr);
+    if (has.call(this._set, sStr)) {
+      return this._set[sStr];
+    }
+  }
+
+  throw new Error('"' + aStr + '" is not in the set.');
+};
+
+/**
+ * What is the element at the given index?
+ *
+ * @param Number aIdx
+ */
+ArraySet.prototype.at = function ArraySet_at(aIdx) {
+  if (aIdx >= 0 && aIdx < this._array.length) {
+    return this._array[aIdx];
+  }
+  throw new Error('No element indexed by ' + aIdx);
+};
+
+/**
+ * Returns the array representation of this set (which has the proper indices
+ * indicated by indexOf). Note that this is a copy of the internal array used
+ * for storing the members so that no one can mess with internal state.
+ */
+ArraySet.prototype.toArray = function ArraySet_toArray() {
+  return this._array.slice();
+};
+
+exports.ArraySet = ArraySet;
 
 
 /***/ }),
@@ -84039,7 +86879,96 @@ exports.safeTrimTrailingSeparator = safeTrimTrailingSeparator;
 
 /***/ }),
 /* 973 */,
-/* 974 */,
+/* 974 */
+/***/ (function(__unusedmodule, exports) {
+
+
+/**
+ * Repeats a string.
+ *
+ * @param {String} char(s)
+ * @param {Number} number of times
+ * @return {String} repeated string
+ */
+
+exports.repeat = function (str, times){
+  return Array(times + 1).join(str);
+};
+
+/**
+ * Pads a string
+ *
+ * @api public
+ */
+
+exports.pad = function (str, len, pad, dir) {
+  if (len + 1 >= str.length)
+    switch (dir){
+      case 'left':
+        str = Array(len + 1 - str.length).join(pad) + str;
+        break;
+
+      case 'both':
+        var right = Math.ceil((padlen = len - str.length) / 2);
+        var left = padlen - right;
+        str = Array(left + 1).join(pad) + str + Array(right + 1).join(pad);
+        break;
+
+      default:
+        str = str + Array(len + 1 - str.length).join(pad);
+    };
+
+  return str;
+};
+
+/**
+ * Truncates a string
+ *
+ * @api public
+ */
+
+exports.truncate = function (str, length, chr){
+  chr = chr || '…';
+  return str.length >= length ? str.substr(0, length - chr.length) + chr : str;
+};
+
+/**
+ * Copies and merges options with defaults.
+ *
+ * @param {Object} defaults
+ * @param {Object} supplied options
+ * @return {Object} new (merged) object
+ */
+
+function options(defaults, opts) {
+  for (var p in opts) {
+    if (opts[p] && opts[p].constructor && opts[p].constructor === Object) {
+      defaults[p] = defaults[p] || {};
+      options(defaults[p], opts[p]);
+    } else {
+      defaults[p] = opts[p];
+    }
+  }
+  return defaults;
+};
+exports.options = options;
+
+//
+// For consideration of terminal "color" programs like colors.js,
+// which can add ANSI escape color codes to strings,
+// we destyle the ANSI color escape codes for padding calculations.
+//
+// see: http://en.wikipedia.org/wiki/ANSI_escape_code
+//
+exports.strlen = function(str){
+  var code = /\u001b\[(?:\d*;){0,5}\d*m/g;
+  var stripped = ("" + str).replace(code,'');
+  var split = stripped.split("\n");
+  return split.reduce(function (memo, s) { return (s.length > memo) ? s.length : memo }, 0);
+}
+
+
+/***/ }),
 /* 975 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -84369,33 +87298,7 @@ module.exports = resolveUrl
 /* 981 */,
 /* 982 */,
 /* 983 */,
-/* 984 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-class Deprecation extends Error {
-  constructor(message) {
-    super(message); // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-
-    this.name = 'Deprecation';
-  }
-
-}
-
-exports.Deprecation = Deprecation;
-
-
-/***/ }),
+/* 984 */,
 /* 985 */
 /***/ (function(module) {
 

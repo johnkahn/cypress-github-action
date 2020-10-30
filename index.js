@@ -2,8 +2,10 @@
 const { restoreCache, saveCache } = require('@actions/cache')
 const core = require('@actions/core')
 const exec = require('@actions/exec')
+const github = require('@actions/github')
 const io = require('@actions/io')
 const { Octokit } = require('@octokit/core')
+const Table = require('cli-table')
 const hasha = require('hasha')
 const got = require('got')
 const fs = require('fs')
@@ -537,12 +539,14 @@ const runTests = async () => {
   const customCommand = core.getInput('command')
   if (customCommand) {
     console.log('Using custom test command: %s', customCommand)
-    return execCommand(customCommand, true, 'run tests')
+    await execCommand(customCommand, true, 'run tests')
+    return
   }
 
   const commandPrefix = core.getInput('command-prefix')
   if (commandPrefix) {
-    return runTestsUsingCommandLine()
+    await runTestsUsingCommandLine()
+    return
   }
 
   core.debug('Running Cypress tests using NPM module API')
@@ -634,6 +638,8 @@ const runTests = async () => {
         new Error(`Cypress tests: ${testResults.totalFailed} failed`)
       )
     }
+
+    return Promise.resolve(testResults)
   }
 
   const onTestsError = e => {
@@ -680,11 +686,260 @@ const installMaybe = () => {
   })
 }
 
+/**
+ * Left pad a string to a specified length
+ * @param {string} value The string to pad
+ * @param {number} length How long the final string should be
+ * @see https://stackoverflow.com/a/13859571
+ */
+const leftPad = (value, length) => {
+  return value.toString().length < length
+    ? leftPad('0' + value, length)
+    : value
+}
+
+/**
+ * Format duration from milliseconds to mm:ss.SSS
+ * @param {number} duration Duration in milliseconds
+ */
+const formatDuration = duration => {
+  const minutes = Math.floor(duration / 60000).toString()
+  const seconds = Math.floor((duration % 60000) / 1000).toString()
+  const millis = Math.floor((duration % 60000) % 1000).toString()
+
+  return (
+    leftPad(minutes, 2) +
+    ':' +
+    leftPad(seconds, 2) +
+    '.' +
+    leftPad(millis, 3)
+  )
+}
+
+const formatResults = results => {
+  const {
+    runs,
+    totalTests,
+    totalPassed,
+    totalFailed,
+    totalSkipped,
+    totalDuration
+  } = results
+
+  const header = [
+    '',
+    'Suite',
+    'Duration',
+    'Tests',
+    'Passing',
+    'Failing'
+  ]
+
+  if (totalSkipped > 0) {
+    header.push('Skipped')
+  }
+
+  const rows = []
+
+  for (const run of runs) {
+    const newRow = [
+      run.stats.failures > 0 ? '✘' : '✔',
+      run.spec.name,
+      formatDuration(run.stats.duration),
+      run.stats.tests + '',
+      run.stats.passes + '',
+      (run.stats.failures || '-') + ''
+    ]
+
+    if (totalSkipped > 0) {
+      newRow.push((run.stats.skipped || '-') + '')
+    }
+
+    rows.push(newRow)
+  }
+
+  const footer = [totalFailed > 0 ? '✘' : '✔']
+  if (totalFailed > 0) {
+    const percentFailed = Math.round((totalFailed / totalTests) * 100)
+
+    footer.push(
+      `${totalFailed} of ${totalTests} failed (${percentFailed}%)`
+    )
+  } else {
+    footer.push('All specs passed!')
+  }
+
+  footer.push(
+    formatDuration(totalDuration),
+    totalTests + '',
+    totalPassed + '',
+    (totalFailed || '-') + ''
+  )
+
+  if (totalSkipped > 0) {
+    footer.push(totalSkipped + '')
+  }
+
+  const colWidths = header.map((_, colIndex) =>
+    rows.reduce(
+      (acc, row) => Math.max(acc, row[colIndex].length + 2),
+      0
+    )
+  )
+
+  const colAligns = colWidths.map((_, i) =>
+    i === 1 ? 'left' : 'right'
+  )
+
+  const tableOptions = {
+    colAligns,
+    colWidths,
+    chars: {
+      top: '',
+      'top-mid': '',
+      'top-right': '',
+      right: '',
+      'right-mid': '',
+      'bottom-right': '',
+      bottom: '',
+      'bottom-mid': '',
+      'bottom-left': '',
+      left: '',
+      'left-mid': '',
+      'top-left': '',
+      mid: '',
+      'mid-mid': ''
+    }
+  }
+
+  const headerTable = new Table(tableOptions)
+  headerTable.push(header)
+
+  const footerTable = new Table(tableOptions)
+  footerTable.push(footer)
+
+  const dataTable = new Table({
+    ...tableOptions,
+    chars: {
+      top: '─',
+      'top-mid': '',
+      'top-right': '┐',
+      right: '|',
+      'right-mid': '┤',
+      'bottom-right': '┘',
+      bottom: '─',
+      'bottom-mid': '',
+      'bottom-left': '└',
+      left: '│',
+      'left-mid': '├',
+      'top-left': '┌',
+      mid: '-',
+      'mid-mid': ''
+    }
+  })
+  dataTable.push(...rows)
+
+  return [
+    headerTable.toString(),
+    dataTable.toString(),
+    footerTable.toString()
+  ].join('\n')
+}
+
+const commentOnPullRequestMaybe = async results => {
+  const githubToken =
+    core.getInput('github-token') || process.env['GITHUB_TOKEN']
+  const githubUserLogin =
+    core.getInput('github-user-login') || 'github-actions[bot]'
+  const commentOnPullRequest = getInputBool(
+    'comment-on-pull-request',
+    false
+  )
+
+  if (!commentOnPullRequest) {
+    console.log(
+      'Skipping pull request comment because comment-on-pull-request parameter is false'
+    )
+
+    return
+  }
+
+  if (!githubToken) {
+    throw new Error(
+      'Missing github token for pull request comment, set one to github-token input or GITHUB_TOKEN environment variable'
+    )
+  }
+
+  if (!github.context.payload.pull_request) {
+    console.log(
+      'Can only comment on pull requests when the workflow is run from a pull request'
+    )
+
+    return
+  }
+
+  if (!results.cypressVersion) {
+    console.log(
+      'Unable to read results, if you are using command or command-prefix then comments will not be made on pull requests'
+    )
+
+    return
+  }
+
+  const octokit = github.getOctokit(githubToken)
+
+  const { data: comments } = await octokit.issues.listComments({
+    ...github.context.repo,
+    issue_number: github.context.payload.pull_request.number
+  })
+
+  const currentComment = comments.find(
+    comment =>
+      comment.user.login === githubUserLogin &&
+      comment.body.indexOf('## Cypress Request') === 0
+  )
+
+  const shortSha = github.context.sha.substr(0, 7)
+
+  const body = [
+    results.runUrl
+      ? `## [Cypress](${results.runUrl}) Results`
+      : '## Cypress Results',
+    '',
+    '```diff',
+    formatResults(results),
+    '```',
+    '',
+    '---',
+    '',
+    results.runUrl
+      ? `[View runs on the Dashboard](${results.runUrl})`
+      : `[Test and debug faster with the Cypress Dashboard](https://www.cypress.io/dashboard)`,
+    `> Powered by [Cypress.io](https://www.cypress.io/). Last update **${shortSha}**.`
+  ].join('\n')
+
+  if (currentComment) {
+    await octokit.issues.updateComment({
+      ...github.context.repo,
+      comment_id: currentComment.id,
+      issue_number: github.context.payload.pull_request.number,
+      body
+    })
+  } else {
+    await octokit.issues.createComment({
+      ...github.context.repo,
+      issue_number: github.context.payload.pull_request.number,
+      body
+    })
+  }
+}
+
 installMaybe()
   .then(buildAppMaybe)
   .then(startServerMaybe)
   .then(waitOnMaybe)
   .then(runTests)
+  .then(commentOnPullRequestMaybe)
   .then(() => {
     core.debug('all done, exiting')
     // force exit to avoid waiting for child processes,

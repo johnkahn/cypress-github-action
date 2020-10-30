@@ -77,6 +77,16 @@ inputs:
   quiet:
     description: 'Whether or not to silence any Cypress specific output from stdout'
     required: false
+  github-token:
+    description: 'The GitHub token to use to post the comment'
+    required: false
+  github-user-login:
+    description: 'The username for the user that is posting the comment (the username for the github-token)'
+    required: false
+    default: 'github-actions[bot]'
+  comment-on-pull-request:
+    description: 'Whether or not to comment on the pull request with results'
+    required: false
 outputs:
   dashboardUrl:
     description: 'Cypress Dashboard URL if the run was recorded'
