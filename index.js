@@ -903,7 +903,7 @@ const commentOnPullRequestMaybe = async results => {
         comment.body.indexOf('## [Cypress]') === 0)
   )
 
-  const shortSha = github.context.sha.substr(0, 7)
+  const shortSha = process.env['GITHUB_SHA'].substr(0, 7)
 
   const body = [
     results.runUrl
