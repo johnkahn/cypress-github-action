@@ -7882,7 +7882,8 @@ const formatResults = results => {
   const rows = []
 
   for (const run of runs) {
-    console.log(`FORMATTING DURATION:`, run.stats.duration)
+    console.log(JSON.stringify(run))
+
     const newRow = [
       run.stats.failures > 0 ? '✘' : '✔',
       run.spec.name,
@@ -7950,7 +7951,8 @@ const formatResults = results => {
       'left-mid': '',
       'top-left': '',
       mid: '',
-      'mid-mid': ''
+      'mid-mid': '',
+      middle: ' '
     }
   }
 
@@ -7976,7 +7978,8 @@ const formatResults = results => {
       'left-mid': '├',
       'top-left': '┌',
       mid: '-',
-      'mid-mid': '─'
+      'mid-mid': '─',
+      middle: ' '
     }
   })
   dataTable.push(...rows)
