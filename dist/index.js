@@ -8013,7 +8013,8 @@ const commentOnPullRequestMaybe = async results => {
     )
   }
 
-  if (!github.context.payload.pull_request) {
+  const pullRequest = github.context.payload.pull_request
+  if (!pullRequest) {
     console.log(
       'Can only comment on pull requests when the workflow is run from a pull request'
     )
@@ -8033,7 +8034,7 @@ const commentOnPullRequestMaybe = async results => {
 
   const { data: comments } = await octokit.issues.listComments({
     ...github.context.repo,
-    issue_number: github.context.payload.pull_request.number
+    issue_number: pullRequest.number
   })
 
   const currentComment = comments.find(
@@ -8043,7 +8044,7 @@ const commentOnPullRequestMaybe = async results => {
         comment.body.indexOf('## [Cypress]') === 0)
   )
 
-  const shortSha = process.env['GITHUB_SHA'].substr(0, 7)
+  const shortSha = pullRequest.head.sha.substr(0, 7)
 
   const body = [
     results.runUrl
@@ -8067,13 +8068,13 @@ const commentOnPullRequestMaybe = async results => {
     await octokit.issues.updateComment({
       ...github.context.repo,
       comment_id: currentComment.id,
-      issue_number: github.context.payload.pull_request.number,
+      issue_number: pullRequest.number,
       body
     })
   } else {
     await octokit.issues.createComment({
       ...github.context.repo,
-      issue_number: github.context.payload.pull_request.number,
+      issue_number: pullRequest.number,
       body
     })
   }
