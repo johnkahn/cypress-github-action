@@ -8003,7 +8003,7 @@ const commentOnPullRequestMaybe = async results => {
       'Skipping pull request comment because comment-on-pull-request parameter is false'
     )
 
-    return
+    return results
   }
 
   if (!githubToken) {
@@ -8018,7 +8018,7 @@ const commentOnPullRequestMaybe = async results => {
       'Can only comment on pull requests when the workflow is run from a pull request'
     )
 
-    return
+    return results
   }
 
   if (!results.cypressVersion) {
@@ -8026,7 +8026,7 @@ const commentOnPullRequestMaybe = async results => {
       'Unable to read results, if you are using command or command-prefix then comments will not be made on pull requests'
     )
 
-    return
+    return results
   }
 
   const octokit = github.getOctokit(githubToken)
