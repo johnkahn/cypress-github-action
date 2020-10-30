@@ -3,7 +3,6 @@ on: [pull_request]
 
 jobs:
   pr-comment:
-    # if: github.event.repository.fork == false # TODO: REMOVE BEFORE PULL REQUEST
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

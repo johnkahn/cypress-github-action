@@ -4,7 +4,6 @@ jobs:
   start:
     # example where instead of forming the default "cypress run ..."
     # the user can specify their own command
-    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎

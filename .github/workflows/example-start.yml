@@ -5,7 +5,6 @@ jobs:
     # example with web application build,
     # server start and waiting for the server
     # to respond before running tests
-    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

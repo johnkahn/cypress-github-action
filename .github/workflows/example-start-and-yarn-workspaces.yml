@@ -5,7 +5,6 @@ jobs:
     # the example has Yarn workspace in its "root" folder
     # examples/start-and-yarn-workspaces
     # and tests in a subfolder like "workspace-1"
-    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,7 +23,6 @@ jobs:
     # server start and waiting for the server
     # to respond before running tests
     # in each Yarn workspaces subfolder
-    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     strategy:
       # when one test fails, DO NOT cancel the other
