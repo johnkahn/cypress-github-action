@@ -742,12 +742,10 @@ const formatResults = results => {
   const rows = []
 
   for (const run of runs) {
-    console.log(JSON.stringify(run))
-
     const newRow = [
       run.stats.failures > 0 ? '✘' : '✔',
       run.spec.name,
-      formatDuration(run.stats.duration),
+      formatDuration(run.stats.wallClockDuration),
       run.stats.tests + '',
       run.stats.passes + '',
       (run.stats.failures || '-') + ''
@@ -801,13 +799,13 @@ const formatResults = results => {
       top: '',
       'top-mid': '',
       'top-right': '',
-      right: '',
+      right: ' ',
       'right-mid': '',
       'bottom-right': '',
       bottom: '',
       'bottom-mid': '',
       'bottom-left': '',
-      left: '',
+      left: ' ',
       'left-mid': '',
       'top-left': '',
       mid: '',
