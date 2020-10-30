@@ -7974,7 +7974,7 @@ const formatResults = results => {
       left: '│',
       'left-mid': '├',
       'top-left': '┌',
-      mid: '-',
+      mid: '─',
       'mid-mid': '─',
       middle: ' '
     }
