@@ -728,7 +728,7 @@ const formatResults = results => {
 
   const header = [
     '',
-    'Suite',
+    'Spec',
     'Duration',
     'Tests',
     'Passing',
@@ -899,8 +899,8 @@ const commentOnPullRequestMaybe = async results => {
   const currentComment = comments.find(
     comment =>
       comment.user.login === githubUserLogin &&
-      (comment.body.indexOf('## Cypress') > 0 ||
-        comment.body.indexOf('## [Cypress]') > 0)
+      (comment.body.indexOf('## Cypress') === 0 ||
+        comment.body.indexOf('## [Cypress]') === 0)
   )
 
   const shortSha = github.context.sha.substr(0, 7)
